@@ -1,0 +1,26 @@
+[package]
+name = "kanban"
+version.workspace = true
+description.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+chrono.workspace = true
+rand.workspace = true
+pollster.workspace = true
+env_logger.workspace = true
+log.workspace = true
+itertools.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0", features = ["webgl"] }
+
+[[bin]]
+name = "kanban"
+path = "src/main.rs"

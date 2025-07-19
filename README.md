@@ -1,38 +1,31 @@
 <p align="center">
   <img width="200" src="img/logo.png" />
-  <h2 align="center"> rust-top_message; rtm </h2>
-  <p align="center">✨✨ Display message on top 😱😭</p>
+  <h2 align="center"> kanban; 看板</h2>
+  <p align="center">A joke tool that displays your message on "top(1)/nvtop/nvitop" using parallel process</p>
 </p>
 
 <p align="center">
   <a>
-    <img src="https://img.shields.io/github/stars/th2ch-g/rust-top_message"/>
+    <img src="https://img.shields.io/github/stars/th2ch-g/kanban"/>
   </a>
   <a>
-    <img src="https://img.shields.io/github/license/th2ch-g/rust-top_message"/>
+    <img src="https://img.shields.io/github/license/th2ch-g/kanban"/>
   </a>
   <a>
-    <img src="https://github.com/th2ch-g/rust-top_message/actions/workflows/rust.yaml/badge.svg"/>
+   <img src="https://img.shields.io/github/languages/top/th2ch-g/kanban"/>
   </a>
   <a>
-   <img src="https://img.shields.io/github/languages/top/th2ch-g/rust-top_message"/>
+    <img src="https://img.shields.io/github/last-commit/th2ch-g/kanban"/>
   </a>
   <a>
-    <img src="https://img.shields.io/github/last-commit/th2ch-g/rust-top_message"/>
-  </a>
-  <a>
-    <img src="https://img.shields.io/github/repo-size/th2ch-g/rust-top_message"/>
-  </a>
-  <a>
-    <img src="https://img.shields.io/badge/rust-1.62.0+-blueviolet.svg?logo=rust"/>
+    <img src="https://img.shields.io/github/repo-size/th2ch-g/kanban"/>
   </a>
 </p>
 
 
-# rust-top_message; rtm
-![GIF](img/rtm_example.gif)
+# kanban
 
-- [rust-top\_message; rtm](#rust-top_message-rtm)
+- [kanban](#kanban)
   - [Install](#install)
     - [Dependencies](#dependencies)
   - [Install OpenMPI version](#install-openmpi-version)
@@ -51,16 +44,16 @@
 
 ## Install
 ~~~shell
-cargo install --git https://github.com/th2ch-g/rust-top_message.git rtm --locked
+cargo install --git https://github.com/th2ch-g/kanban.git kanban --locked
 ~~~
 
 ### Dependencies
-- [Rust](https://www.rust-lang.org/tools/install) (tested rustc 1.71.0, cargo 1.71.0)
-    - rust-top_message requires Rust environment
+- [Rust](https://www.rust-lang.org/tools/install)
+    - kanban requires Rust environment
 
 ## Install OpenMPI version
 ~~~shell
-cargo install --git https://github.com/th2ch-g/rust-top_message.git rtm-mpi --locked
+cargo install --git https://github.com/th2ch-g/kanban.git kanban-mpi --locked
 ~~~
 
 ### Dependencies
@@ -97,36 +90,36 @@ cargo install --git https://github.com/th2ch-g/rust-top_message.git rtm-mpi --lo
 <a id="single"></a>
 ### Single mode
 ~~~shell
-rtm single -m hello_world -@ 4 -t 20 & top
+kanban single -m hello_world -@ 4 -t 20 & top
 ~~~
 
 <a id="multiple"></a>
 ### Multiple mode
 ~~~shell
-rtm multiple -m hello_world -@ 4 -t 20 & top
+kanban multiple -m hello_world -@ 4 -t 20 & top
 ~~~
 
 <a id="multiple2"></a>
 ### Multiple2 mode
 ~~~shell
-rtm multiple2 -m "hello_world1" "hello_world2" "hello_world3" -t 20 & top
+kanban multiple2 -m "hello_world1" "hello_world2" "hello_world3" -t 20 & top
 ~~~
 
 <a id="long"></a>
 ### Long mode
 ~~~shell
-rtm long -m Rust_is_the_greatest_and_best_programming_language_ever -t 20 & top
+kanban long -m Rust_is_the_greatest_and_best_programming_language_ever -t 20 & top
 ~~~
 
 <a id="vertical"></a>
 ### Vertical mode
 ~~~shell
-rtm vertical -m "ThankYou" "GoodLuck" -t 20 & top
+kanban vertical -m "ThankYou" "GoodLuck" -t 20 & top
 ~~~
 
 ### Wave mode
 ~~~shell
-rtm wave -m 123456789 -@ 4 & top
+kanban wave -m 123456789 -@ 4 & top
 ~~~
 
 <a id="gpu"></a>
@@ -136,11 +129,11 @@ rtm wave -m 123456789 -@ 4 & top
 - tested on NVIDIA RTX A6000, M1MacOS.
 ~~~shell
 # nvidia-smi
-rtm gpu -m "RustGPU" & nvidia-smi
+kanban gpu -m "RustGPU" & nvidia-smi
 # nvtop
-rtm gpu -m "RustGPU" & nvtop
+kanban gpu -m "RustGPU" & nvtop
 # nvitop
-rtm gpu -m "RustGPU" & nvitop
+kanban gpu -m "RustGPU" & nvitop
 ~~~
 
 
@@ -148,7 +141,7 @@ rtm gpu -m "RustGPU" & nvitop
 - Run immediately without compiling or copying and without changing the command name.
 - CPU is used
 ~~~shell
-rtm raw-single -m "aaa" -t 20 & top
+kanban raw-single -m "aaa" -t 20 & top
 ~~~
 
 
@@ -156,6 +149,6 @@ rtm raw-single -m "aaa" -t 20 & top
 - Run immediately without compiling or copying and without changing the command name.
 - GPU is used by wgpu
 ~~~shell
-rtm raw-gpu -m "aaa" -t 20 & nvtop
+kanban raw-gpu -m "aaa" -t 20 & nvtop
 ~~~
 

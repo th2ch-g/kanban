@@ -1,14 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "rtm",
-    "rtm-wasm",
-    "rtm-mpi",
+    "kanban",
+    "kanban-mpi",
 ]
 
 default-members = [
-    "rtm",
-    "rtm-wasm",
+    "kanban",
 ]
 
 [workspace.package]
@@ -16,13 +14,12 @@ version = "2.3.0"
 edition = "2021"
 authors = ["th"]
 license = "MIT"
-repository = "https://github.com/th2ch-g/rust-top_message"
-description = "rust-top_message: A tool which display message on top"
+repository = "https://github.com/th2ch-g/kanban"
+description = "kanban: A joke tool that displays your message on top(1)/nvtop/nvitop using parallel process"
 
 [workspace.dependencies]
-rtm = { path = "rtm/" }
-rtm-mpi = { path = "rtm-mpi/" }
-rtm-wasm = { path = "rtm-wasm/" }
+kanban = { path = "kanban/" }
+kanban-mpi = { path = "kanban-mpi/" }
 anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"]  }
 chrono = "0.4.22"
@@ -33,9 +30,6 @@ env_logger = "0.10.1"
 log = "0.4.21"
 mpi = "0.6.0"
 itertools = "0.14.0"
-yew = { version = "0.21.0", features = ["csr"] }
-yew-router = "0.18.0"
-web-sys = { version = "0.3", features = ["Event","EventTarget","InputEvent"] }
 
 [profile.release]
 opt-level = "s"

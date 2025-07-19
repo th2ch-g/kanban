@@ -4,22 +4,3 @@ CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 [config]
 skip_core_tasks = true
 
-[tasks.wasm]
-workspace = false
-script = '''
-trunk -V
-cd rtm-wasm
-trunk serve --open
-'''
-
-[tasks.fmt]
-workspace = false
-script = """
-cargo fmt
-cargo clippy
-cd rtm-wasm
-for rs in $(fd .rs);
-do
-    yew-fmt $rs
-done
-"""
