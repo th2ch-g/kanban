@@ -16,16 +16,16 @@ jobs:
       - name: cargo version
         run: cargo --version
       - name: test single
-        run: cargo run -r --bin rtm single -m "aaa" -@ 2 -t 3 --tmpdir ./single
+        run: cargo run -r --bin kanban single -m "aaa" -@ 2 -t 3 --tmpdir ./single
       - name: test multiple
-        run: cargo run -r --bin rtm multiple -m "aaa" -@ 2 -t 3 --tmpdir ./multiple
+        run: cargo run -r --bin kanban multiple -m "aaa" -@ 2 -t 3 --tmpdir ./multiple
       - name: test multiple2
-        run: cargo run -r --bin rtm multiple2 -m "aaa" "bbb" "ccc" -t 3 --tmpdir ./multiple2
+        run: cargo run -r --bin kanban multiple2 -m "aaa" "bbb" "ccc" -t 3 --tmpdir ./multiple2
       - name: test long
-        run: cargo run -r --bin rtm long -m "aaabbb" -t 3 -l 3 --tmpdir ./long
+        run: cargo run -r --bin kanban long -m "aaabbb" -t 3 -l 3 --tmpdir ./long
       - name: test vertical
-        run: cargo run -r --bin rtm vertical -m "aa" "bb" -t 3 --tmpdir ./vertical
+        run: cargo run -r --bin kanban vertical -m "aa" "bb" -t 3 --tmpdir ./vertical
       - name: test wave
-        run: cargo run -r --bin rtm wave -m "aaabbb" -@ 1 -l 3 --tmpdir ./wave
+        run: cargo run -r --bin kanban wave -m "aaabbb" -@ 1 -l 3 --tmpdir ./wave
       - name: test raw-single
-        run: cargo run -r --bin rtm raw-single -m "aaa" -@ 2 -t 3
+        run: cargo run -r --bin kanban raw-single -m "aaa" -@ 2 -t 3

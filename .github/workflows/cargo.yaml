@@ -20,7 +20,7 @@ jobs:
       - name: cargo version
         run: cargo --version
       - name: build
-        run: cargo build -r --bin rtm
+        run: cargo build -r --bin kanban
 
   format:
     name: format
@@ -59,4 +59,4 @@ jobs:
         run: cargo clippy --version
       - name: lint
         run: cargo clippy
-        working-directory: ./rtm
+        working-directory: ./kanban
