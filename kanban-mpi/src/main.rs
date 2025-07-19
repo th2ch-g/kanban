@@ -1,6 +1,6 @@
-use mpi::traits::*;
 use kanban::arg::*;
 use kanban::kanban_run;
+use mpi::traits::*;
 use std::env;
 
 fn main() {
