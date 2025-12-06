@@ -142,7 +142,7 @@ kanban gpu -m "RustGPU" & nvitop
 
 
 <a id="multiple2_procname"></a>
-## Multiple2 mode with procname method
+### Multiple2 mode with procname method
 - display process name instead of command name
 ~~~shell
 kanban multiple2 -m test1 test2 test3 -t 20 --method procname & htop
