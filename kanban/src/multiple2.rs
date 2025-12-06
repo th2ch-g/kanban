@@ -1,7 +1,9 @@
 use crate::arg::*;
 use crate::method::compile::*;
+use crate::method::procname::*;
+use crate::method::*;
 
-impl CompileTopMessage for Multiple2Arg {
+impl CommonTopMessage for Multiple2Arg {
     fn messages(&self) -> Vec<String> {
         self.message.clone()
     }
@@ -10,7 +12,23 @@ impl CompileTopMessage for Multiple2Arg {
         &self.dir_name
     }
 
-    fn run(self) {
+    fn method(&self) -> Method {
+        self.method
+    }
+
+    fn thread(&self) -> usize {
+        self.message.len()
+    }
+
+    fn time(&self) -> usize {
+        self.time
+    }
+}
+
+impl CompileTopMessage for Multiple2Arg {
+    fn run_by_compile(self) {
         self.clone().template_run(self.time, true);
     }
 }
+
+impl ProcnameTopMessage for Multiple2Arg {}

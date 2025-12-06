@@ -1,8 +1,10 @@
 use crate::arg::*;
 use crate::method::compile::*;
+use crate::method::procname::*;
+use crate::method::*;
 use std::io::prelude::*;
 
-impl CompileTopMessage for GpuArg {
+impl CommonTopMessage for GpuArg {
     fn messages(&self) -> Vec<String> {
         vec![self.message.clone()]
     }
@@ -11,7 +13,21 @@ impl CompileTopMessage for GpuArg {
         &self.dir_name
     }
 
-    fn run(self) {
+    fn method(&self) -> Method {
+        self.method
+    }
+
+    fn thread(&self) -> usize {
+        self.thread
+    }
+
+    fn time(&self) -> usize {
+        self.time
+    }
+}
+
+impl CompileTopMessage for GpuArg {
+    fn run_by_compile(self) {
         log::info!("GPU checking...");
 
         if let Err(e) = pollster::block_on(self.check_gpu()) {
@@ -47,6 +63,8 @@ impl CompileTopMessage for GpuArg {
         self.rmdir();
     }
 }
+
+impl ProcnameTopMessage for GpuArg {}
 
 impl GpuArg {
     pub fn create_cargotoml(&self) {
