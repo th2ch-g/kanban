@@ -159,17 +159,18 @@ impl GpuState {
     }
 
     fn compute(&self) {
-        let mut command_encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Command Encoder"),
-            });
+        let mut command_encoder =
+            self.device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Command Encoder"),
+                });
 
         {
-            let mut compute_pass = command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("Compute Pass"),
-                timestamp_writes: None,
-            });
+            let mut compute_pass =
+                command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                    label: Some("Compute Pass"),
+                    timestamp_writes: None,
+                });
             compute_pass.set_pipeline(&self.pipeline);
             compute_pass.dispatch_workgroups(1, 1, 1);
         }

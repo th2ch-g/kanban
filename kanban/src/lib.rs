@@ -10,7 +10,7 @@ pub mod single;
 pub mod vertical;
 pub mod wave;
 use crate::arg::*;
-use crate::method::{*, compile::*, procname::*};
+use crate::method::{compile::*, procname::*, *};
 
 pub fn kanban_run(cli: &MainArg) {
     match &cli.mode {

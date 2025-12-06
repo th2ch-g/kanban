@@ -1,7 +1,7 @@
+use crate::method::*;
 use std::sync::Arc;
 use std::thread::Builder;
 use std::time::Instant;
-use crate::method::*;
 
 pub trait ProcnameTopMessage: CommonTopMessage
 where
@@ -76,18 +76,18 @@ where
             // We should probably spawn M threads.
 
             if thread_count > 0 && messages.len() % thread_count == 0 {
-                 // Maybe this case?
-                 messages
+                // Maybe this case?
+                messages
             } else {
-                 // Just spawn all messages?
-                 // Or spawn M * thread_count?
-                 let mut v = Vec::new();
-                 for m in messages {
-                     for _ in 0..std::cmp::max(1, thread_count) {
-                         v.push(m.clone());
-                     }
-                 }
-                 v
+                // Just spawn all messages?
+                // Or spawn M * thread_count?
+                let mut v = Vec::new();
+                for m in messages {
+                    for _ in 0..std::cmp::max(1, thread_count) {
+                        v.push(m.clone());
+                    }
+                }
+                v
             }
         };
 

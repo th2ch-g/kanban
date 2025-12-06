@@ -1,6 +1,6 @@
+use crate::method::*;
 use clap::{Parser, Subcommand};
 use rand::prelude::*;
-use crate::method::*;
 
 #[derive(Parser, Debug, Clone)]
 #[clap(version, about)] //#[clap(author, version, about)]

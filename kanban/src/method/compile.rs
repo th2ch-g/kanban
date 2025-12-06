@@ -1,5 +1,5 @@
-use std::io::prelude::*;
 use crate::method::*;
+use std::io::prelude::*;
 
 pub trait CompileTopMessage: CommonTopMessage
 where

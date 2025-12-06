@@ -1,5 +1,5 @@
 use crate::arg::*;
-use crate::method::{*, compile::*, procname::*};
+use crate::method::{compile::*, procname::*, *};
 use std::sync::Arc;
 use std::thread::Builder;
 use std::time::Instant;

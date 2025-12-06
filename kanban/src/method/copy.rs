@@ -1,3 +1,1 @@
-pub trait CopyTopMessage {
-
-}
+pub trait CopyTopMessage {}
