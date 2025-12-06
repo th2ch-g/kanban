@@ -86,6 +86,10 @@ cargo install --git https://github.com/th2ch-g/kanban.git kanban-mpi --locked
     <img src="img/gpu.png" class="galleryItem" width=200px></img>
 </a>
 
+<a href=#multiple2_procname>
+    <img src="img/multiple2_procname.png" class="galleryItem" width=200px></img>
+</a>
+
 ## Quick start & Examples
 <a id="single"></a>
 ### Single mode
@@ -136,6 +140,13 @@ kanban gpu -m "RustGPU" & nvtop
 kanban gpu -m "RustGPU" & nvitop
 ~~~
 
+
+<a id="multiple2_procname"></a>
+## Multiple2 mode with procname method
+- display process name instead of command name
+~~~shell
+kanban multiple2 -m test1 test2 test3 -t 20 --method procname & htop
+~~~
 
 ### RawSingle mode
 - Run immediately without compiling or copying and without changing the command name.
