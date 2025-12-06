@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use rand::prelude::*;
+use crate::method::*;
 
 #[derive(Parser, Debug, Clone)]
 #[clap(version, about)] //#[clap(author, version, about)]
@@ -124,6 +125,15 @@ pub struct SingleArg {
     )]
     pub tmpdir: String,
 
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
+
     #[clap(skip)]
     pub dir_name: String,
 }
@@ -170,6 +180,15 @@ pub struct MultipleArg {
     )]
     pub tmpdir: String,
 
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
+
     #[clap(skip)]
     pub dir_name: String,
 }
@@ -208,6 +227,15 @@ pub struct Multiple2Arg {
         display_order = 3
     )]
     pub tmpdir: String,
+
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
 
     #[clap(skip)]
     pub dir_name: String,
@@ -255,6 +283,15 @@ pub struct LongArg {
     )]
     pub tmpdir: String,
 
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
+
     #[clap(skip)]
     pub dir_name: String,
 }
@@ -293,6 +330,15 @@ pub struct VerticalArg {
         display_order = 3
     )]
     pub tmpdir: String,
+
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
 
     #[clap(skip)]
     pub dir_name: String,
@@ -340,6 +386,15 @@ pub struct WaveArg {
     )]
     pub tmpdir: String,
 
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
+
     #[clap(skip)]
     pub dir_name: String,
 }
@@ -357,15 +412,16 @@ pub struct GpuArg {
     )]
     pub message: String,
 
-    // #[clap(
-    //     short = '@',
-    //     long,
-    //     value_name = "INT",
-    //     default_value = "1",
-    //     help = "thread number",
-    //     display_order = 2
-    // )]
-    // pub thread: usize,
+    #[clap(
+        short = '@',
+        long,
+        value_name = "INT",
+        default_value = "1",
+        help = "thread number",
+        display_order = 2
+    )]
+    pub thread: usize,
+
     #[clap(
         short,
         long,
@@ -384,6 +440,15 @@ pub struct GpuArg {
         display_order = 4
     )]
     pub tmpdir: String,
+
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 5
+    )]
+    pub method: Method,
 
     #[clap(skip)]
     pub dir_name: String,

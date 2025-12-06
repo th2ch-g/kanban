@@ -1,12 +1,11 @@
 use std::io::prelude::*;
+use crate::method::*;
 
-pub trait CompileTopMessage
+pub trait CompileTopMessage: CommonTopMessage
 where
     Self: 'static,
 {
-    fn run(self); // due to parallel process
-    fn messages(&self) -> Vec<String>;
-    fn dir_name(&self) -> &str;
+    fn run_by_compile(self); // due to parallel process
 
     fn compile(&self, dir_name: &str, message: &str) {
         std::process::Command::new("rustc")

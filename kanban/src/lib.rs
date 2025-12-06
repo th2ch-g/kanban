@@ -10,17 +10,45 @@ pub mod single;
 pub mod vertical;
 pub mod wave;
 use crate::arg::*;
-use crate::method::compile::*;
+use crate::method::{*, compile::*, procname::*};
 
 pub fn kanban_run(cli: &MainArg) {
     match &cli.mode {
-        Mode::Single(arg) => arg.clone().run(),
-        Mode::Multiple(arg) => arg.clone().run(),
-        Mode::Multiple2(arg) => arg.clone().run(),
-        Mode::Vertical(arg) => arg.clone().run(),
-        Mode::Long(arg) => arg.clone().run(),
-        Mode::Wave(arg) => arg.clone().run(),
-        Mode::Gpu(arg) => arg.clone().run(),
+        Mode::Single(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
+        Mode::Multiple(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
+        Mode::Multiple2(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
+        Mode::Long(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
+        Mode::Vertical(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
+        Mode::Wave(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
+        Mode::Gpu(arg) => match arg.method {
+            Method::Procname => arg.clone().run_by_procname(),
+            Method::Compile => arg.clone().run_by_compile(),
+            Method::Copy => todo!(),
+        },
         Mode::RawSingle(arg) => arg.run(),
         Mode::RawGpu(arg) => arg.run(),
     }

@@ -1,7 +1,9 @@
 use crate::arg::*;
 use crate::method::compile::*;
+use crate::method::procname::*;
+use crate::method::*;
 
-impl CompileTopMessage for WaveArg {
+impl CommonTopMessage for WaveArg {
     fn messages(&self) -> Vec<String> {
         let msg_len = self.message.len();
         let mut message_list = Vec::new();
@@ -39,7 +41,47 @@ impl CompileTopMessage for WaveArg {
         &self.dir_name
     }
 
-    fn run(self)
+    fn method(&self) -> Method {
+        self.method
+    }
+
+    fn thread(&self) -> usize {
+        // In wave mode, multiple processes are launched, each with self.thread threads.
+        // But for ProcnameTopMessage generic implementation we might want to return
+        // something else if we want to mimic the behavior.
+        // However, based on the plan, we will handle messages iteration in run_by_procname.
+        // The `thread` method here returns user specified thread count per "process" (or message).
+        self.thread
+    }
+
+    fn time(&self) -> usize {
+        // Wave mode calculates execution time automatically based on length or message length in compile mode.
+        // But here we need to return a usize.
+        // If we want to simulate the wave, we might need a longer time.
+        // But `WaveArg` doesn't have a `time` field.
+        // Let's check `WaveArg` definition. It doesn't have `time`.
+        // The help says "execute time is automatically determined".
+        // In `run_by_compile` it doesn't use `time` either?
+        // Wait, `WaveArg` implementation in `kanban/src/wave.rs`:
+        // It calls `execute` and waits.
+        // But `ms.rs` template uses `time`.
+        // In `run` implementation of `WaveArg` (old code):
+        // `self_r.create_mainfile(..., self.thread, 2);`
+        // It hardcodes time to 2 seconds per step?
+        // Ah, `WaveArg` logic is: compile N variants, then run them sequentially or in parallel?
+        // "one message on one top like electric bulletin board"
+        // It runs variants one by one or shifted?
+        // `run` implementation:
+        // `for message in self.messages() { self_t.execute(".", &message); }`
+        // It executes them sequentially!
+        // So each execution lasts for the time specified in `create_mainfile`.
+        // The code says `2`.
+        2
+    }
+}
+
+impl CompileTopMessage for WaveArg {
+    fn run_by_compile(self)
     where
         Self: Sync + Send,
     {
@@ -61,7 +103,8 @@ impl CompileTopMessage for WaveArg {
 
             thrs.push(std::thread::spawn(move || {
                 self_r.mkdir(&format!("{}/{}", dir_name_r, i));
-                self_r.create_mainfile(&format!("{}/{}", dir_name_r, i), self.thread, 2);
+                // Hardcoded time 2 seconds as per original implementation
+                self_r.create_mainfile(&format!("{}/{}", dir_name_r, i), self_r.thread(), 2);
                 self_r.compile_with_subdir(&dir_name_r, &i.to_string(), &message_list_r[i]);
             }));
         }
@@ -80,3 +123,5 @@ impl CompileTopMessage for WaveArg {
         self_t.rmdir();
     }
 }
+
+impl ProcnameTopMessage for WaveArg {}
