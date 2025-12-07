@@ -24,7 +24,7 @@ anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"]  }
 chrono = "0.4.22"
 rand = "0.8.5"
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0" }
+wgpu = "27.0"
 pollster = "0.3.0"
 env_logger = "0.10.1"
 log = "0.4.21"

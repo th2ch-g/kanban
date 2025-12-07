@@ -34,10 +34,12 @@ impl State {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::downlevel_defaults(),
+                    memory_hints: wgpu::MemoryHints::Performance,
+                    trace: wgpu::Trace::Off,
+                    experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 },
-                None,
             )
             .await
             .unwrap();
@@ -57,7 +59,9 @@ impl State {
             label: Some("Compute pipeline"),
             layout: Some(&pipeline_layout),
             module: &shader,
-            entry_point: "main",
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
+            cache: None,
         });
 
         Self {

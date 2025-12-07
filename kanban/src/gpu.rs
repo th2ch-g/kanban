@@ -3,7 +3,6 @@ use crate::method::compile::*;
 use crate::method::procname::*;
 use crate::method::*;
 use std::io::prelude::*;
-use std::sync::Arc;
 use std::thread::Builder;
 
 impl CommonTopMessage for GpuArg {
@@ -87,7 +86,7 @@ impl ProcnameTopMessage for GpuArg {
                         // to avoid crashing the main process if GPU is unavailable or busy.
                         match GpuState::new().await {
                             Ok(state) => state.compute(),
-                            Err(e) => {
+                            Err(_) => {
                                 // If we can't access GPU, we might fall back to CPU spin
                                 // or just log and retry.
                                 // Since run_by_compile would fail if GPU check fails,
@@ -118,16 +117,18 @@ impl GpuState {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
+            .map_err(|_| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
 
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::downlevel_defaults(),
+                    memory_hints: wgpu::MemoryHints::Performance,
+                    trace: wgpu::Trace::Off,
+                    experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 },
-                None,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create device and queue: {}", e))?;
@@ -148,7 +149,9 @@ impl GpuState {
             label: Some("Compute Pipeline"),
             layout: Some(&pipeline_layout),
             module: &shader,
-            entry_point: "main",
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
+            cache: None,
         });
 
         Ok(Self {
@@ -214,15 +217,17 @@ impl GpuArg {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
+            .map_err(|_| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
         let (_device, _queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::downlevel_defaults(),
+                    memory_hints: wgpu::MemoryHints::Performance,
+                    trace: wgpu::Trace::Off,
+                    experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 },
-                None,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create device and queue: {}", e))?;
