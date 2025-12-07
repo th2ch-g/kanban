@@ -76,23 +76,20 @@ impl ProcnameTopMessage for GpuArg {
             .spawn(move || {
                 pollster::block_on(async move {
                     let start = std::time::Instant::now();
-                    loop {
-                        if start.elapsed().as_secs() >= time as u64 {
-                            break;
-                        }
-
-                        // We attempt to replicate the logic from the template.
-                        // However, we handle errors gracefully instead of unwrapping blindly,
-                        // to avoid crashing the main process if GPU is unavailable or busy.
-                        match GpuState::new().await {
-                            Ok(state) => state.compute(),
-                            Err(_) => {
-                                // If we can't access GPU, we might fall back to CPU spin
-                                // or just log and retry.
-                                // Since run_by_compile would fail if GPU check fails,
-                                // we can assume it might work, or we should just yield.
-                                // We'll log once if possible but in a tight loop it's bad.
-                                // Let's just yield.
+                    // Initialize GPU state once
+                    match GpuState::new().await {
+                        Ok(state) => loop {
+                            if start.elapsed().as_secs() >= time as u64 {
+                                break;
+                            }
+                            state.compute();
+                        },
+                        Err(_) => {
+                            // Fallback if GPU init fails (though unlikely if check_gpu passed)
+                            loop {
+                                if start.elapsed().as_secs() >= time as u64 {
+                                    break;
+                                }
                                 std::thread::yield_now();
                             }
                         }
