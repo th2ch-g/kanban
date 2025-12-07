@@ -177,7 +177,13 @@ impl GpuState {
             compute_pass.set_pipeline(&self.pipeline);
             compute_pass.dispatch_workgroups(1, 1, 1);
         }
-        self.queue.submit(Some(command_encoder.finish()));
+        let index = self.queue.submit(Some(command_encoder.finish()));
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
     }
 }
 
