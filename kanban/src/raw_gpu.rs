@@ -7,11 +7,11 @@ impl RawGpuArg {
 
     async fn core(&self) {
         let start = std::time::Instant::now();
+        let state = State::new().await;
         loop {
             if start.elapsed().as_secs() >= (self.time as u64) {
                 break;
             }
-            let state = State::new().await;
             state.compute();
         }
     }
@@ -34,10 +34,12 @@ impl State {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::downlevel_defaults(),
+                    memory_hints: wgpu::MemoryHints::Performance,
+                    trace: wgpu::Trace::Off,
+                    experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 },
-                None,
             )
             .await
             .unwrap();
@@ -57,7 +59,9 @@ impl State {
             label: Some("Compute pipeline"),
             layout: Some(&pipeline_layout),
             module: &shader,
-            entry_point: "main",
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
+            cache: None,
         });
 
         Self {
@@ -83,6 +87,12 @@ impl State {
             compute_pass.set_pipeline(&self.pipeline);
             compute_pass.dispatch_workgroups(1, 1, 1);
         }
-        self.queue.submit(Some(command_encoder.finish()));
+        let index = self.queue.submit(Some(command_encoder.finish()));
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
     }
 }

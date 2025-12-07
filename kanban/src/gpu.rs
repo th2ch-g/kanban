@@ -3,7 +3,6 @@ use crate::method::compile::*;
 use crate::method::procname::*;
 use crate::method::*;
 use std::io::prelude::*;
-use std::sync::Arc;
 use std::thread::Builder;
 
 impl CommonTopMessage for GpuArg {
@@ -77,23 +76,20 @@ impl ProcnameTopMessage for GpuArg {
             .spawn(move || {
                 pollster::block_on(async move {
                     let start = std::time::Instant::now();
-                    loop {
-                        if start.elapsed().as_secs() >= time as u64 {
-                            break;
-                        }
-
-                        // We attempt to replicate the logic from the template.
-                        // However, we handle errors gracefully instead of unwrapping blindly,
-                        // to avoid crashing the main process if GPU is unavailable or busy.
-                        match GpuState::new().await {
-                            Ok(state) => state.compute(),
-                            Err(e) => {
-                                // If we can't access GPU, we might fall back to CPU spin
-                                // or just log and retry.
-                                // Since run_by_compile would fail if GPU check fails,
-                                // we can assume it might work, or we should just yield.
-                                // We'll log once if possible but in a tight loop it's bad.
-                                // Let's just yield.
+                    // Initialize GPU state once
+                    match GpuState::new().await {
+                        Ok(state) => loop {
+                            if start.elapsed().as_secs() >= time as u64 {
+                                break;
+                            }
+                            state.compute();
+                        },
+                        Err(_) => {
+                            // Fallback if GPU init fails (though unlikely if check_gpu passed)
+                            loop {
+                                if start.elapsed().as_secs() >= time as u64 {
+                                    break;
+                                }
                                 std::thread::yield_now();
                             }
                         }
@@ -118,16 +114,18 @@ impl GpuState {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
+            .map_err(|_| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
 
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::downlevel_defaults(),
+                    memory_hints: wgpu::MemoryHints::Performance,
+                    trace: wgpu::Trace::Off,
+                    experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 },
-                None,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create device and queue: {}", e))?;
@@ -148,7 +146,9 @@ impl GpuState {
             label: Some("Compute Pipeline"),
             layout: Some(&pipeline_layout),
             module: &shader,
-            entry_point: "main",
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
+            cache: None,
         });
 
         Ok(Self {
@@ -174,7 +174,13 @@ impl GpuState {
             compute_pass.set_pipeline(&self.pipeline);
             compute_pass.dispatch_workgroups(1, 1, 1);
         }
-        self.queue.submit(Some(command_encoder.finish()));
+        let index = self.queue.submit(Some(command_encoder.finish()));
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
     }
 }
 
@@ -214,15 +220,17 @@ impl GpuArg {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
+            .map_err(|_| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
         let (_device, _queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
+                    required_features: wgpu::Features::empty(),
+                    required_limits: wgpu::Limits::downlevel_defaults(),
+                    memory_hints: wgpu::MemoryHints::Performance,
+                    trace: wgpu::Trace::Off,
+                    experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 },
-                None,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create device and queue: {}", e))?;

@@ -16,10 +16,10 @@ log.workspace = true
 itertools.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0" }
+wgpu = "27.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0", features = ["webgl"] }
+wgpu = { version = "27.0", features = ["webgl"] }
 
 [[bin]]
 name = "kanban"
