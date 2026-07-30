@@ -203,10 +203,10 @@ impl GpuArg {
     }
 
     pub fn compile_with_cargo(&self) {
-        std::process::Command::new("cargo")
-            .arg("build")
-            .output()
-            .expect("failed to cargo build");
+        run_checked(
+            std::process::Command::new("cargo").arg("build"),
+            "cargo build",
+        );
     }
 
     pub async fn check_gpu(&self) -> Result<(), anyhow::Error> {

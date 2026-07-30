@@ -8,21 +8,23 @@ where
     fn run_by_compile(self); // due to parallel process
 
     fn compile(&self, dir_name: &str, message: &str) {
-        std::process::Command::new("rustc")
-            .arg(format!("{}/{}", dir_name, "ms.rs"))
-            .arg("-o")
-            .arg(format!("{}/{}", dir_name, message))
-            .output()
-            .expect("failed to compile");
+        run_checked(
+            std::process::Command::new("rustc")
+                .arg(format!("{}/{}", dir_name, "ms.rs"))
+                .arg("-o")
+                .arg(format!("{}/{}", dir_name, message)),
+            "rustc",
+        );
     }
 
     fn compile_with_subdir(&self, dir_name: &str, subdir: &str, message: &str) {
-        std::process::Command::new("rustc")
-            .arg(format!("{}/{}/{}", dir_name, subdir, "ms.rs"))
-            .arg("-o")
-            .arg(format!("{}/{}/{}", dir_name, "run", message))
-            .output()
-            .expect("failed to compile2");
+        run_checked(
+            std::process::Command::new("rustc")
+                .arg(format!("{}/{}/{}", dir_name, subdir, "ms.rs"))
+                .arg("-o")
+                .arg(format!("{}/{}/{}", dir_name, "run", message)),
+            "rustc",
+        );
     }
 
     fn record_current_dir(&self) -> String {
@@ -48,9 +50,8 @@ where
     }
 
     fn execute(&self, dir_name: &str, message: &str) {
-        std::process::Command::new(format!("{}/{}", dir_name, message))
-            .output()
-            .expect("failed to run");
+        let path = format!("{}/{}", dir_name, message);
+        run_checked(&mut std::process::Command::new(&path), &path);
     }
 
     fn rmdir(&self) {
