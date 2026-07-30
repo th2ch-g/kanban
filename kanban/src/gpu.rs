@@ -75,16 +75,20 @@ impl ProcnameTopMessage for GpuArg {
         let handle = builder
             .spawn(move || {
                 pollster::block_on(async move {
-                    let start = std::time::Instant::now();
-                    loop {
-                        if start.elapsed().as_secs() >= time as u64 {
-                            break;
-                        }
+                    // Build the device once. Doing it per iteration meant
+                    // creating and dropping a whole device for every dispatch,
+                    // which dominated the actual compute work.
+                    let state = GpuState::new().await;
+                    if let Err(e) = &state {
+                        log::error!("{}", e);
+                    }
 
-                        // Keep the thread alive and busy even when the GPU is
-                        // unavailable: the point of this mode is the thread name
-                        // showing up in top, not the compute work itself.
-                        match GpuState::new().await {
+                    let start = std::time::Instant::now();
+                    while start.elapsed().as_secs() < time as u64 {
+                        // Keep the thread alive and busy even without a GPU:
+                        // this mode is about the thread name showing up in top,
+                        // not about the compute work itself.
+                        match &state {
                             Ok(state) => state.compute(),
                             Err(_) => std::thread::yield_now(),
                         }
@@ -107,6 +111,7 @@ pub(crate) struct GpuState {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::ComputePipeline,
+    bind_group: wgpu::BindGroup,
     pub(crate) adapter_info: wgpu::AdapterInfo,
 }
 
@@ -137,9 +142,42 @@ impl GpuState {
             source: wgpu::ShaderSource::Wgsl(shader_source.into()),
         });
 
+        // The shader writes its result here. Nothing ever reads the buffer back;
+        // it exists so the arithmetic has an observable effect and survives
+        // optimisation.
+        let sink = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Sink Buffer"),
+            size: std::mem::size_of::<f32>() as u64,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Bind Group Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Bind Group"),
+            layout: &bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: sink.as_entire_binding(),
+            }],
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline Layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &[Some(&bind_group_layout)],
             immediate_size: 0,
         });
 
@@ -156,6 +194,7 @@ impl GpuState {
             device,
             queue,
             pipeline,
+            bind_group,
             adapter_info,
         })
     }
@@ -174,6 +213,7 @@ impl GpuState {
                     timestamp_writes: None,
                 });
             compute_pass.set_pipeline(&self.pipeline);
+            compute_pass.set_bind_group(0, Some(&self.bind_group), &[]);
             compute_pass.dispatch_workgroups(1, 1, 1);
         }
         self.queue.submit(Some(command_encoder.finish()));
