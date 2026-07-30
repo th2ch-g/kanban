@@ -20,6 +20,22 @@ jobs:
       - name: build
         run: cargo build -r --bin kanban
 
+  # default-members is ["kanban"], so the build job above never looks at
+  # kanban-mpi. It had gone stale unnoticed: the crate used log and env_logger
+  # without declaring them, and would not compile at all.
+  build-mpi:
+    name: build-mpi
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install openmpi and clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev libclang-dev clang
+      - name: check
+        run: cargo check --workspace
+
   format:
     name: format
     runs-on: ubuntu-latest

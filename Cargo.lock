@@ -728,7 +728,9 @@ dependencies = [
 name = "kanban-mpi"
 version = "2.3.0"
 dependencies = [
+ "env_logger",
  "kanban",
+ "log",
  "mpi",
 ]
 
