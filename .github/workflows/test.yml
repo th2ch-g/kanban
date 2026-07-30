@@ -3,8 +3,11 @@ name: test
 on:
   push:
     branches:
+      # '*' stops at a slash, so dev/... branches were never tested.
+      - '**'
+  pull_request:
+    branches:
       - main
-      - '*'
 
 jobs:
   test:
@@ -29,3 +32,11 @@ jobs:
         run: cargo run -r --bin kanban wave -m "aaabbb" -@ 1 -l 3 --tmpdir ./wave
       - name: test raw-single
         run: cargo run -r --bin kanban raw-single -m "aaa" -@ 2 -t 3
+      # The procname method names threads instead of compiling binaries, and
+      # had never been exercised here.
+      - name: test single (procname)
+        run: cargo run -r --bin kanban single -m "aaa" -@ 2 -t 3 --method procname
+      - name: test multiple2 (procname)
+        run: cargo run -r --bin kanban multiple2 -m "aaa" "bbb" "ccc" -t 3 --method procname
+      - name: test long (procname)
+        run: cargo run -r --bin kanban long -m "aaabbb" -t 3 -l 3 --method procname

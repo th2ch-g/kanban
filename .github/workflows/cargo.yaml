@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-    pull_request:
-      branches:
-        - main
-      types:
-       - closed
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -25,6 +23,10 @@ jobs:
   format:
     name: format
     runs-on: ubuntu-latest
+    # Pushes a "[Action] cargo fmt" commit, so keep it off pull requests:
+    # on a fork PR it cannot push, and on a branch PR it would rewrite
+    # someone else's branch behind their back.
+    if: github.event_name == 'push'
     steps:
       - name: checkout
         uses: actions/checkout@v3
