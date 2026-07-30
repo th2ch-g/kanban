@@ -30,17 +30,18 @@ impl CompileTopMessage for SingleArg {
     fn run_by_compile(self) {
         self.mkdir(self.dir_name());
 
-        self.create_mainfile(self.dir_name(), self.thread(), self.time());
+        self.create_mainfile(self.dir_name());
 
         self.create_idfile();
 
-        self.compile(self.dir_name(), &self.messages()[0]);
+        let message = &self.messages()[0];
+        self.compile(self.dir_name(), message);
 
         let current_dir = self.record_current_dir();
 
         self.cd(&self.dir_name);
 
-        self.execute(".", &self.messages()[0]);
+        self.execute(".", message, self.thread(), self.time());
 
         self.cd(&current_dir);
 

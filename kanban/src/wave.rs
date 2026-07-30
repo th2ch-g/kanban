@@ -81,46 +81,16 @@ impl CommonTopMessage for WaveArg {
 }
 
 impl CompileTopMessage for WaveArg {
-    fn run_by_compile(self)
-    where
-        Self: Sync + Send,
-    {
-        let dir_name_t = std::sync::Arc::new(self.dir_name().to_string().clone());
-        let message_list_t = std::sync::Arc::new(self.messages().clone());
-        let self_t = std::sync::Arc::new(self.clone());
-
-        self_t.mkdir(self_t.dir_name());
-        self_t.mkdir(&format!("{}/{}", self_t.dir_name(), "run"));
-
-        self_t.create_idfile();
-
-        let mut thrs = Vec::new();
-
-        for i in 0..self_t.messages().len() {
-            let dir_name_r = std::sync::Arc::clone(&dir_name_t);
-            let message_list_r = std::sync::Arc::clone(&message_list_t);
-            let self_r = std::sync::Arc::clone(&self_t);
-
-            thrs.push(std::thread::spawn(move || {
-                self_r.mkdir(&format!("{}/{}", dir_name_r, i));
-                // Hardcoded time 2 seconds as per original implementation
-                self_r.create_mainfile(&format!("{}/{}", dir_name_r, i), self_r.thread(), 2);
-                self_r.compile_with_subdir(&dir_name_r, &i.to_string(), &message_list_r[i]);
-            }));
-        }
-
-        thrs.into_iter().for_each(|h| h.join().unwrap());
-
-        let current_dir = self_t.record_current_dir();
-        self_t.cd(&format!("{}/{}", self_t.dir_name(), "run"));
-
-        for message in self.messages() {
-            self_t.execute(".", &message);
-        }
-
-        self_t.cd(&current_dir);
-
-        self_t.rmdir();
+    fn run_by_compile(self) {
+        // This used to be a near-verbatim copy of template_run. The only real
+        // difference is that the frames run one at a time, which is what makes
+        // the message appear to scroll.
+        let threads = self.thread();
+        self.clone().template_run(
+            self.time(),
+            ThreadPlan::Uniform(threads),
+            ExecutionOrder::Sequential,
+        );
     }
 }
 

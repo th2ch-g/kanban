@@ -57,7 +57,7 @@ impl CompileTopMessage for GpuArg {
 
         self.cd("./target/debug/");
 
-        self.execute(".", &self.message);
+        self.execute(".", &self.message, self.thread(), self.time());
 
         self.cd(&cwd);
 
@@ -223,7 +223,7 @@ impl GpuState {
 impl GpuArg {
     pub fn create_cargotoml(&self) {
         let template = include_str!("template/gpu/Cargo.toml");
-        let filled_template = template.replace("{ name }", &self.message);
+        let filled_template = template.replace("kanban_gpu_template", &self.message);
         let output_path = format!("{}/Cargo.toml", self.dir_name());
         let mut output_file = std::fs::File::create(&output_path).unwrap();
         output_file.write_all(filled_template.as_bytes()).unwrap();
@@ -231,10 +231,9 @@ impl GpuArg {
 
     pub fn create_gpu_mainfile(&self) {
         let template = include_str!("template/gpu/main.rs");
-        let filled_template = template.replace("{ time }", &self.time.to_string());
         let output_path = format!("{}/main.rs", self.dir_name());
         let mut output_file = std::fs::File::create(&output_path).unwrap();
-        output_file.write_all(filled_template.as_bytes()).unwrap();
+        output_file.write_all(template.as_bytes()).unwrap();
     }
 
     pub fn create_shaderwgsl(&self) {

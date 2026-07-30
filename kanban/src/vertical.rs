@@ -45,7 +45,8 @@ impl CommonTopMessage for VerticalArg {
 
 impl CompileTopMessage for VerticalArg {
     fn run_by_compile(self) {
-        self.clone().template_run(self.time, false);
+        self.clone()
+            .template_run(self.time, ThreadPlan::Decreasing, ExecutionOrder::Parallel);
     }
 }
 

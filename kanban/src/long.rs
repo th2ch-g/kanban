@@ -37,7 +37,8 @@ impl CommonTopMessage for LongArg {
 
 impl CompileTopMessage for LongArg {
     fn run_by_compile(self) {
-        self.clone().template_run(self.time, false)
+        self.clone()
+            .template_run(self.time, ThreadPlan::Decreasing, ExecutionOrder::Parallel)
     }
 }
 

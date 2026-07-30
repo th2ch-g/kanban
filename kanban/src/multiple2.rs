@@ -27,7 +27,8 @@ impl CommonTopMessage for Multiple2Arg {
 
 impl CompileTopMessage for Multiple2Arg {
     fn run_by_compile(self) {
-        self.clone().template_run(self.time, true);
+        self.clone()
+            .template_run(self.time, ThreadPlan::One, ExecutionOrder::Parallel);
     }
 }
 

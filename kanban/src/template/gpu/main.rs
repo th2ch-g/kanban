@@ -1,12 +1,23 @@
-const TIME: u64 = { time };
+// The program kanban compiles for `gpu --method compile`. Its *filename* is the
+// message, which is what nvtop displays; the body keeps the GPU busy.
+//
+// The duration arrives through the environment rather than being pasted in as
+// text before compiling, which is what used to make this file invalid Rust and
+// therefore invisible to cargo, clippy and rustfmt.
+
 fn main() {
     pollster::block_on(run());
 }
 
 async fn run() {
+    let time: u64 = std::env::var("KANBAN_TIME")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+
     let state = State::new().await;
     let start = std::time::Instant::now();
-    while start.elapsed().as_secs() < TIME {
+    while start.elapsed().as_secs() < time {
         state.compute();
     }
 }

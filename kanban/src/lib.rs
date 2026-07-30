@@ -12,6 +12,23 @@ pub mod wave;
 use crate::arg::*;
 use crate::method::{compile::*, procname::*, *};
 
+/// The templates are written to a temporary directory and compiled at runtime,
+/// so nothing in a normal build ever type-checks them - which is how the GPU
+/// one silently kept a wgpu 0.18 call through a bump to 30. Pulling them in as
+/// modules here makes `cargo check` and `cargo clippy` cover them.
+///
+/// This only works because the templates are ordinary Rust now; they used to
+/// open with `const TIME: u64 = { time };`, filled in by string replacement.
+#[allow(dead_code)]
+mod template_typecheck {
+    mod ms {
+        include!("template/ms.rs");
+    }
+    mod gpu {
+        include!("template/gpu/main.rs");
+    }
+}
+
 pub fn kanban_run(cli: &MainArg) {
     match &cli.mode {
         Mode::Single(arg) => match arg.method {

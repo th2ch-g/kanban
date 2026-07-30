@@ -8,5 +8,7 @@ wgpu = "30"
 pollster = "1.0"
 
 [[bin]]
-name = "{ name }"
+# kanban rewrites this name to the message, which is what nvtop shows. The
+# placeholder is a valid crate name so the template builds untouched.
+name = "kanban_gpu_template"
 path = "main.rs"
