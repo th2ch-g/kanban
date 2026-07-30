@@ -7,6 +7,8 @@ pub mod multiple2;
 pub mod raw_gpu;
 pub mod raw_single;
 pub mod single;
+#[cfg(test)]
+mod tests;
 pub mod vertical;
 pub mod wave;
 use crate::arg::*;

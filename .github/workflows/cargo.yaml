@@ -19,6 +19,8 @@ jobs:
         run: cargo --version
       - name: build
         run: cargo build -r --bin kanban
+      - name: test
+        run: cargo test -p kanban
 
   # default-members is ["kanban"], so the build job above never looks at
   # kanban-mpi. It had gone stale unnoticed: the crate used log and env_logger
