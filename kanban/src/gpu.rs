@@ -3,7 +3,6 @@ use crate::method::compile::*;
 use crate::method::procname::*;
 use crate::method::*;
 use std::io::prelude::*;
-use std::sync::Arc;
 use std::thread::Builder;
 
 impl CommonTopMessage for GpuArg {
@@ -82,20 +81,12 @@ impl ProcnameTopMessage for GpuArg {
                             break;
                         }
 
-                        // We attempt to replicate the logic from the template.
-                        // However, we handle errors gracefully instead of unwrapping blindly,
-                        // to avoid crashing the main process if GPU is unavailable or busy.
+                        // Keep the thread alive and busy even when the GPU is
+                        // unavailable: the point of this mode is the thread name
+                        // showing up in top, not the compute work itself.
                         match GpuState::new().await {
                             Ok(state) => state.compute(),
-                            Err(e) => {
-                                // If we can't access GPU, we might fall back to CPU spin
-                                // or just log and retry.
-                                // Since run_by_compile would fail if GPU check fails,
-                                // we can assume it might work, or we should just yield.
-                                // We'll log once if possible but in a tight loop it's bad.
-                                // Let's just yield.
-                                std::thread::yield_now();
-                            }
+                            Err(_) => std::thread::yield_now(),
                         }
                     }
                 });
@@ -106,29 +97,37 @@ impl ProcnameTopMessage for GpuArg {
     }
 }
 
-struct GpuState {
+/// Everything needed to keep a GPU busy: a device, its queue and the compute
+/// pipeline built from `template/gpu/shader.wgsl`.
+///
+/// `raw_gpu` shares this type, so the workspace holds a single copy of the wgpu
+/// setup sequence. The generated crate under `template/gpu/` necessarily keeps
+/// its own copy, since it is built standalone in a temporary directory.
+pub(crate) struct GpuState {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::ComputePipeline,
+    pub(crate) adapter_info: wgpu::AdapterInfo,
 }
 
 impl GpuState {
-    async fn new() -> Result<Self, anyhow::Error> {
+    pub(crate) async fn new() -> Result<Self, anyhow::Error> {
         let instance = wgpu::Instance::default();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
+            .map_err(|e| anyhow::anyhow!("Failed to find an appropriate GPU adapter: {}", e))?;
+        let adapter_info = adapter.get_info();
 
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
-                },
-                None,
-            )
+            .request_device(&wgpu::DeviceDescriptor {
+                label: Some("Device and Queue"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::downlevel_defaults(),
+                experimental_features: wgpu::ExperimentalFeatures::disabled(),
+                memory_hints: wgpu::MemoryHints::default(),
+                trace: wgpu::Trace::Off,
+            })
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create device and queue: {}", e))?;
 
@@ -141,24 +140,27 @@ impl GpuState {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline Layout"),
             bind_group_layouts: &[],
-            push_constant_ranges: &[],
+            immediate_size: 0,
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Compute Pipeline"),
             layout: Some(&pipeline_layout),
             module: &shader,
-            entry_point: "main",
+            entry_point: Some("main"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            cache: None,
         });
 
         Ok(Self {
             device,
             queue,
             pipeline,
+            adapter_info,
         })
     }
 
-    fn compute(&self) {
+    pub(crate) fn compute(&self) {
         let mut command_encoder =
             self.device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -209,24 +211,23 @@ impl GpuArg {
         );
     }
 
+    /// Probe the GPU before doing any work on disk.
+    ///
+    /// Building the whole `GpuState` (rather than only asking for a device)
+    /// means the shader and pipeline are validated here too, so a shader the
+    /// driver rejects is reported up front instead of from inside the busy loop.
+    /// The adapter is logged because wgpu happily falls back to a software
+    /// rasterizer such as llvmpipe, which looks like success but never shows up
+    /// in nvtop.
     pub async fn check_gpu(&self) -> Result<(), anyhow::Error> {
-        let instance = wgpu::Instance::default();
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to find an appropriate GPU adapter"))?;
-        let (_device, _queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("Device and Queue"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults(),
-                },
-                None,
-            )
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to create device and queue: {}", e))?;
-
+        let state = GpuState::new().await?;
+        let info = &state.adapter_info;
+        log::info!(
+            "GPU adapter: {} ({:?}, backend {:?})",
+            info.name,
+            info.device_type,
+            info.backend
+        );
         Ok(())
     }
 }

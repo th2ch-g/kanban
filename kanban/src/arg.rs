@@ -31,8 +31,8 @@ impl Default for MainArg {
 fn gen_dir_name(input_name: &str) -> String {
     let default_tmpdir_name = String::from("/tmp/tmp_kanban_(date_randomnumber_pid)");
     if input_name == default_tmpdir_name {
-        let mut rng = rand::thread_rng();
-        let rand_num: u32 = rng.gen();
+        let mut rng = rand::rng();
+        let rand_num: u32 = rng.random();
         format!(
             "{}_{}_{}",
             chrono::Utc::now().format("/tmp/tmp_kanban_%Y%m%d%H%M%S"),
