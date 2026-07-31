@@ -702,7 +702,7 @@ dependencies = [
 
 [[package]]
 name = "kanban"
-version = "2.3.0"
+version = "2.4.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -717,11 +717,11 @@ dependencies = [
 
 [[package]]
 name = "kanban-core"
-version = "2.3.0"
+version = "2.4.0"
 
 [[package]]
 name = "kanban-mpi"
-version = "2.3.0"
+version = "2.4.0"
 dependencies = [
  "env_logger",
  "kanban",
