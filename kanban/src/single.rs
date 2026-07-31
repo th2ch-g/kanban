@@ -28,24 +28,13 @@ impl CommonTopMessage for SingleArg {
 
 impl CompileTopMessage for SingleArg {
     fn run_by_compile(self) {
-        self.mkdir(self.dir_name());
+        let _guard = self.temp_dir();
 
         self.create_mainfile(self.dir_name());
 
-        self.create_idfile();
-
         let message = &self.messages()[0];
         self.compile(self.dir_name(), message);
-
-        let current_dir = self.record_current_dir();
-
-        self.cd(&self.common.dir_name);
-
-        self.execute(".", message, self.thread(), self.time());
-
-        self.cd(&current_dir);
-
-        self.rmdir();
+        self.execute(self.dir_name(), message, self.thread(), self.time());
     }
 }
 

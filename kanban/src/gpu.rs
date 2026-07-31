@@ -35,7 +35,7 @@ impl CompileTopMessage for GpuArg {
             log::error!("{}", e);
         }
 
-        self.mkdir(self.dir_name());
+        let _guard = self.temp_dir();
 
         self.create_cargotoml();
 
@@ -43,25 +43,14 @@ impl CompileTopMessage for GpuArg {
 
         self.create_shaderwgsl();
 
-        self.create_idfile();
-
-        let cwd = self.record_current_dir();
-
-        self.cd(self.dir_name());
-
         log::info!("Compiling...");
 
         self.compile_with_cargo();
 
         log::info!("Compile done!");
 
-        self.cd("./target/debug/");
-
-        self.execute(".", &self.message, self.thread(), self.time());
-
-        self.cd(&cwd);
-
-        self.rmdir();
+        let bin_dir = format!("{}/target/debug", self.dir_name());
+        self.execute(&bin_dir, &self.message, self.thread(), self.time());
     }
 }
 
@@ -244,8 +233,13 @@ impl GpuArg {
     }
 
     pub fn compile_with_cargo(&self) {
+        // current_dir rather than chdir'ing the process: cargo needs to see the
+        // generated manifest, but nothing else here should have to care where
+        // the working directory happens to be.
         run_checked(
-            std::process::Command::new("cargo").arg("build"),
+            std::process::Command::new("cargo")
+                .arg("build")
+                .current_dir(self.dir_name()),
             "cargo build",
         );
     }

@@ -30,6 +30,33 @@ impl ThreadPlan {
     }
 }
 
+/// Owns a temporary directory and removes it on the way out, panic included.
+///
+/// Cleanup used to be the last statement of each run function, which any
+/// earlier failure skipped - a compile error left the directory behind for
+/// good, because the guard below only deletes directories kanban marked, and
+/// a re-run with the same --tmpdir then failed to create it.
+pub struct TempDir {
+    path: String,
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        // Only ever delete a directory carrying our marker file. Without this,
+        // `--tmpdir ~/important` would be a recursive delete of real work.
+        if !std::path::Path::new(&self.path)
+            .join("kanban.idfile")
+            .exists()
+        {
+            log::warn!("{} has no kanban.idfile, leaving it alone", self.path);
+            return;
+        }
+        if let Err(e) = std::fs::remove_dir_all(&self.path) {
+            log::warn!("failed to remove {}: {}", self.path, e);
+        }
+    }
+}
+
 /// Whether the compiled binaries run all at once or one after another.
 #[derive(Debug, Clone, Copy)]
 pub enum ExecutionOrder {
@@ -65,58 +92,36 @@ where
         );
     }
 
-    fn record_current_dir(&self) -> String {
-        let current_dir = std::path::PathBuf::from("./");
-        let current_dir = std::fs::canonicalize(current_dir);
-        match current_dir {
-            Ok(s) => s.to_string_lossy().to_string(),
-            Err(_) => {
-                log::error!("failed to record current directory");
-                String::from("err")
-            }
-        }
-    }
-
-    fn cd(&self, dir_name: &str) {
-        let cd_result = std::env::set_current_dir(dir_name);
-        match cd_result {
-            Ok(_) => (),
-            Err(_) => {
-                log::error!("failed to cd");
-            }
-        }
-    }
-
     /// Run one compiled message. Thread count and duration travel through the
     /// environment, so every generated binary is identical apart from its name.
     fn execute(&self, dir_name: &str, message: &str, threads: usize, time: usize) {
-        let path = format!("{}/{}", dir_name, message);
+        let path = std::path::Path::new(dir_name).join(message);
+        // A relative program name is resolved against the *parent's* working
+        // directory, not Command::current_dir, so make it absolute. This is
+        // what removed the need to chdir the whole process.
+        let path = std::fs::canonicalize(&path).unwrap_or(path);
         run_checked(
             std::process::Command::new(&path)
                 .env("KANBAN_THREAD", threads.to_string())
                 .env("KANBAN_TIME", time.to_string()),
-            &path,
+            &path.to_string_lossy(),
         );
     }
 
-    fn rmdir(&self) {
-        let dir_path = std::path::Path::new(self.dir_name());
-        let idfile_path = dir_path.join("kanban.idfile");
-
-        if idfile_path.exists() && std::fs::remove_dir_all(self.dir_name()).is_err() {
-            log::warn!("failed to rmdir but continue");
+    /// Create the temporary directory, mark it as ours, and hand back a guard
+    /// that removes it again.
+    fn temp_dir(&self) -> TempDir {
+        self.mkdir(self.dir_name());
+        self.create_idfile();
+        TempDir {
+            path: self.dir_name().to_string(),
         }
     }
 
     fn mkdir(&self, dir_name: &str) {
-        let mkdir_result = std::fs::create_dir(dir_name);
-        match mkdir_result {
-            Ok(_) => (),
-            Err(_) => {
-                log::error!("failed to create directory");
-                log::error!("check authority");
-                std::process::exit(1);
-            }
+        if let Err(e) = std::fs::create_dir_all(dir_name) {
+            log::error!("failed to create directory {}: {}", dir_name, e);
+            std::process::exit(1);
         }
     }
 
@@ -143,12 +148,12 @@ where
         let messages = Arc::new(self.messages());
         let threads = Arc::new(plan.counts(messages.len()));
         let dir_name = Arc::new(self.dir_name().to_string());
+
+        let _guard = self.temp_dir();
+        let run_dir = Arc::new(format!("{}/{}", dir_name, "run"));
+
         let self_t = Arc::new(self);
-
-        self_t.mkdir(&dir_name);
-        self_t.mkdir(&format!("{}/{}", dir_name, "run"));
-
-        self_t.create_idfile();
+        self_t.mkdir(&run_dir);
 
         let mut thrs = Vec::new();
         for i in 0..messages.len() {
@@ -164,31 +169,25 @@ where
         }
         thrs.into_iter().for_each(|h| h.join().unwrap());
 
-        let current_dir = self_t.record_current_dir();
-        self_t.cd(&format!("{}/{}", dir_name, "run"));
-
         match order {
             ExecutionOrder::Parallel => {
                 let mut thrs = Vec::new();
                 for i in 0..messages.len() {
                     let messages = Arc::clone(&messages);
                     let threads = Arc::clone(&threads);
+                    let run_dir = Arc::clone(&run_dir);
                     let self_r = Arc::clone(&self_t);
                     thrs.push(std::thread::spawn(move || {
-                        self_r.execute(".", &messages[i], threads[i], time);
+                        self_r.execute(&run_dir, &messages[i], threads[i], time);
                     }));
                 }
                 thrs.into_iter().for_each(|h| h.join().unwrap());
             }
             ExecutionOrder::Sequential => {
                 for i in 0..messages.len() {
-                    self_t.execute(".", &messages[i], threads[i], time);
+                    self_t.execute(&run_dir, &messages[i], threads[i], time);
                 }
             }
         }
-
-        self_t.cd(&current_dir);
-
-        self_t.rmdir();
     }
 }
