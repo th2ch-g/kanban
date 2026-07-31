@@ -46,8 +46,10 @@ jobs:
           cp "target/${{ matrix.target }}/release/kanban" "dist/kanban-${{ matrix.target }}"
           ( cd dist && sha256sum "kanban-${{ matrix.target }}" > "kanban-${{ matrix.target }}.sha256" )
 
+      # Pinned to a commit, not a tag. This is third-party code running with
+      # contents: write, and a tag can be repointed by whoever owns it.
       - name: upload
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             dist/kanban-${{ matrix.target }}

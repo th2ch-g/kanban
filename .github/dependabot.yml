@@ -1,0 +1,15 @@
+version: 2
+
+# The workflows pin third-party actions to commit SHAs, which is what stops a
+# repointed tag from running as us. Pins go stale, so let Dependabot propose the
+# bumps as reviewable pull requests rather than leaving them frozen.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: monthly

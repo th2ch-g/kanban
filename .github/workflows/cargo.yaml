@@ -58,8 +58,10 @@ jobs:
         run: cargo fmt --version
       - name: format
         run: cargo fmt
+      # Pinned for the same reason as in release.yml: third-party code that
+      # pushes commits to main.
       - name: commit
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
           commit_message: '[Action] cargo fmt'
 
