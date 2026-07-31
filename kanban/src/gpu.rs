@@ -2,7 +2,6 @@ use crate::arg::*;
 use crate::method::compile::*;
 use crate::method::procname::*;
 use crate::method::*;
-use std::io::prelude::*;
 use std::thread::Builder;
 
 impl CommonTopMessage for GpuArg {
@@ -211,25 +210,20 @@ impl GpuState {
 
 impl GpuArg {
     pub fn create_cargotoml(&self) {
-        let template = include_str!("template/gpu/Cargo.toml");
-        let filled_template = template.replace("kanban_gpu_template", &self.message);
-        let output_path = format!("{}/Cargo.toml", self.dir_name());
-        let mut output_file = std::fs::File::create(&output_path).unwrap();
-        output_file.write_all(filled_template.as_bytes()).unwrap();
+        // The binary name is what nvtop shows, so it becomes the message.
+        let template =
+            include_str!("template/gpu/Cargo.toml").replace("kanban_gpu_template", &self.message);
+        write_generated(&format!("{}/Cargo.toml", self.dir_name()), &template);
     }
 
     pub fn create_gpu_mainfile(&self) {
         let template = include_str!("template/gpu/main.rs");
-        let output_path = format!("{}/main.rs", self.dir_name());
-        let mut output_file = std::fs::File::create(&output_path).unwrap();
-        output_file.write_all(template.as_bytes()).unwrap();
+        write_generated(&format!("{}/main.rs", self.dir_name()), template);
     }
 
     pub fn create_shaderwgsl(&self) {
         let template = include_str!("template/gpu/shader.wgsl");
-        let output_path = format!("{}/shader.wgsl", self.dir_name());
-        let mut output_file = std::fs::File::create(&output_path).unwrap();
-        output_file.write_all(template.as_bytes()).unwrap();
+        write_generated(&format!("{}/shader.wgsl", self.dir_name()), template);
     }
 
     pub fn compile_with_cargo(&self) {

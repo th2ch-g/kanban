@@ -26,6 +26,18 @@ pub fn run_checked(cmd: &mut std::process::Command, what: &str) {
     }
 }
 
+/// Write one of the generated files, saying which one if it fails.
+///
+/// This was five near-identical File::create/write_all pairs ending in
+/// unwrap(), so a full disk or a read-only --tmpdir surfaced as a panic that
+/// named neither the path nor the operation.
+pub fn write_generated(path: &str, contents: &str) {
+    if let Err(e) = std::fs::write(path, contents) {
+        log::error!("failed to write {}: {}", path, e);
+        std::process::exit(1);
+    }
+}
+
 pub trait CommonTopMessage
 where
     Self: 'static,

@@ -1,5 +1,4 @@
 use crate::method::*;
-use std::io::prelude::*;
 use std::sync::Arc;
 
 /// How many threads each spawned process runs.
@@ -127,16 +126,12 @@ where
 
     fn create_idfile(&self) {
         let template = include_str!("../template/kanban.idfile");
-        let output_path = format!("{}/kanban.idfile", self.dir_name());
-        let mut output_file = std::fs::File::create(&output_path).unwrap();
-        output_file.write_all(template.as_bytes()).unwrap();
+        write_generated(&format!("{}/kanban.idfile", self.dir_name()), template);
     }
 
     fn create_mainfile(&self, dir_name: &str) {
         let template = include_str!("../template/ms.rs");
-        let output_path = format!("{}/ms.rs", dir_name);
-        let mut output_file = std::fs::File::create(&output_path).unwrap();
-        output_file.write_all(template.as_bytes()).unwrap();
+        write_generated(&format!("{}/ms.rs", dir_name), template);
     }
 
     fn template_run(self, time: usize, plan: ThreadPlan, order: ExecutionOrder)
