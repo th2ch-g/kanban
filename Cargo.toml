@@ -22,15 +22,15 @@ description = "kanban: A joke tool that displays your message on top(1)/nvtop/nv
 kanban = { path = "kanban/" }
 kanban-core = { path = "kanban-core/" }
 kanban-mpi = { path = "kanban-mpi/" }
-anyhow = "1.0.95"
+anyhow = "1.0.104"
 clap = { version = "4.5.23", features = ["derive"]  }
-chrono = "0.4.22"
-rand = "0.9.3"
+chrono = "0.4.45"
+rand = "0.10.2"
 wgpu = "30"
 pollster = "1.0"
-env_logger = "0.10.1"
+env_logger = "0.11.6"
 log = "0.4.21"
-mpi = "0.6.0"
+mpi = "0.8.2"
 
 [profile.release]
 opt-level = "s"
