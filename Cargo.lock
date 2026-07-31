@@ -749,6 +749,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kanban-wasm"
+version = "2.3.0"
+dependencies = [
+ "kanban-core",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

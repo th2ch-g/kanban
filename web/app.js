@@ -6,11 +6,15 @@
 // Local Network Access permission - so that path degrades to instructions
 // rather than pretending to work.
 //
-// The preview always comes from the server, never from a copy of the layout
-// logic reimplemented here. A second implementation drifts, and the whole point
-// of the shared core crate was to stop that happening.
+// The preview never reimplements the layout logic. With a server it comes over
+// /preview; without one it comes from the same Rust compiled to wasm. Writing a
+// second version in JavaScript is exactly the drift the shared core crate
+// exists to prevent.
 
 const LOCAL = "http://127.0.0.1:8787";
+
+// Mode order matches the CLI, and kanban_layout in kanban-wasm.
+const MODE_ID = { single: 0, multiple: 1, multiple2: 2, long: 3, vertical: 4, wave: 5 };
 
 const el = (id) => document.getElementById(id);
 const form = el("form");
@@ -108,6 +112,42 @@ function render(lines) {
 
 // --- server ---------------------------------------------------------------
 
+// --- wasm fallback ---------------------------------------------------------
+
+let wasm = null;
+
+async function loadWasm() {
+  if (wasm !== null) return wasm;
+  try {
+    const source = await WebAssembly.instantiateStreaming(fetch("kanban_wasm.wasm"), {});
+    wasm = source.instance.exports;
+  } catch (_) {
+    wasm = false; // asked once, not available
+  }
+  return wasm;
+}
+
+function layoutLocally(ex, s) {
+  const enc = new TextEncoder();
+  const bytes = enc.encode(s.message.join("\n"));
+  const view = () => new Uint8Array(ex.memory.buffer);
+
+  const ptr = ex.kanban_alloc(bytes.length);
+  view().set(bytes, ptr);
+  const lenPtr = ex.kanban_alloc(4);
+  const out = ex.kanban_layout(MODE_ID[s.mode] ?? 0, ptr, bytes.length, s.thread, s.length, lenPtr);
+  const outLen = new DataView(ex.memory.buffer).getUint32(lenPtr, true);
+  const text = outLen ? new TextDecoder().decode(view().slice(out, out + outLen)) : "";
+
+  ex.kanban_free(ptr, bytes.length);
+  ex.kanban_free(lenPtr, 4);
+  if (outLen) ex.kanban_free(out, outLen);
+
+  return text === "" ? [] : text.split("\n");
+}
+
+// --- server ---------------------------------------------------------------
+
 async function post(path, body) {
   const headers = { "Content-Type": "application/json" };
   if (!link.sameOrigin && link.token) headers["X-Kanban-Token"] = link.token;
@@ -166,7 +206,7 @@ function setLink(text) {
 
   el("caption").textContent = link.up
     ? "Preview from the local kanban. PID, %CPU and %MEM are made up; COMMAND is real."
-    : "Start a local kanban to preview and run.";
+    : "Preview only — the same layout code, compiled to wasm. Start a local kanban to run it.";
 }
 
 // --- wiring ---------------------------------------------------------------
@@ -184,14 +224,16 @@ function refresh() {
 
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
-    if (!link.up) return render([]);
-    try {
-      const data = await post("/preview", s);
-      render(data.lines);
-    } catch (e) {
-      render([]);
-      say(String(e.message || e), "error");
+    if (link.up) {
+      try {
+        const data = await post("/preview", s);
+        return render(data.lines);
+      } catch (e) {
+        say(String(e.message || e), "error");
+      }
     }
+    const ex = await loadWasm();
+    render(ex ? layoutLocally(ex, s) : []);
   }, 120);
 }
 

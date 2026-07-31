@@ -4,6 +4,7 @@ members = [
     "kanban-core",
     "kanban",
     "kanban-mpi",
+    "kanban-wasm",
 ]
 
 default-members = [

@@ -11,6 +11,8 @@ on:
       - main
     paths:
       - 'web/**'
+      - 'kanban-core/**'
+      - 'kanban-wasm/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -33,11 +35,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Lets the page preview a layout before you have a kanban running. Raw
+      # extern "C" rather than wasm-bindgen, so plain cargo is the whole
+      # toolchain.
+      - name: build wasm
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build -r -p kanban-wasm --target wasm32-unknown-unknown
+
       - name: assemble site
         run: |
           mkdir -p _site
           cp web/index.html web/app.js web/style.css _site/
           cp web/serve.sh _site/
+          cp target/wasm32-unknown-unknown/release/kanban_wasm.wasm _site/
           cp img/logo.png _site/ 2>/dev/null || true
           # Jekyll would otherwise swallow anything starting with an underscore.
           touch _site/.nojekyll

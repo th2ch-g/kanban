@@ -56,7 +56,7 @@ pub fn run(arg: &ServeArg) {
     for request in server.incoming_requests() {
         let busy = Arc::clone(&busy);
         let token = token.clone();
-        if let Err(e) = handle(request, &token, has_rustc, busy) {
+        if let Err(e) = handle(request, &token, arg.port, has_rustc, busy) {
             log::warn!("request failed: {}", e);
         }
     }
@@ -65,6 +65,7 @@ pub fn run(arg: &ServeArg) {
 fn handle(
     mut request: Request,
     token: &str,
+    port: u16,
     has_rustc: bool,
     busy: Arc<AtomicBool>,
 ) -> std::io::Result<()> {
@@ -90,7 +91,7 @@ fn handle(
             let mut body = String::new();
             request.as_reader().read_to_string(&mut body)?;
 
-            if !authorised(&request, token) {
+            if !authorised(&request, token, port) {
                 return request.respond(
                     cors(json("{\"error\":\"bad or missing token\"}")).with_status_code(403),
                 );
@@ -130,16 +131,34 @@ fn handle(
 
 /// Same-origin requests carry no token; the browser's origin policy already
 /// gates them. Anything that announces a different origin must present one.
-fn authorised(request: &Request, token: &str) -> bool {
-    let origin = header(request, "Origin");
-    let cross_origin = match &origin {
-        None => false,
-        Some(o) => !o.starts_with("http://127.0.0.1") && !o.starts_with("http://localhost"),
-    };
-    if !cross_origin {
-        return true;
+fn authorised(request: &Request, token: &str, port: u16) -> bool {
+    match header(request, "Origin") {
+        None => true,
+        Some(origin) if is_own_origin(&origin, port) => true,
+        Some(_) => header(request, "X-Kanban-Token").as_deref() == Some(token),
     }
-    header(request, "X-Kanban-Token").as_deref() == Some(token)
+}
+
+/// Whether an Origin header names this very server.
+///
+/// Exact comparison, never a prefix: `starts_with("http://127.0.0.1")` also
+/// accepts `http://127.0.0.1.example.com`, a domain anyone can register, which
+/// would have waved that origin through as local.
+fn is_own_origin(origin: &str, port: u16) -> bool {
+    let mut expected = vec![
+        format!("http://127.0.0.1:{}", port),
+        format!("http://localhost:{}", port),
+        format!("http://[::1]:{}", port),
+    ];
+    if port == 80 {
+        // Browsers leave the port out when it is the scheme's default.
+        expected.extend([
+            "http://127.0.0.1".to_string(),
+            "http://localhost".to_string(),
+            "http://[::1]".to_string(),
+        ]);
+    }
+    expected.iter().any(|e| e == origin)
 }
 
 fn header(request: &Request, name: &str) -> Option<String> {
@@ -438,37 +457,25 @@ fn cors<R: std::io::Read>(response: Response<R>) -> Response<R> {
     })
 }
 
+/// A token a page from another origin must present to run anything.
+///
+/// This gates execution, so it comes from the OS-seeded generator rather than
+/// anything derived from the clock and the pid - those are both observable, and
+/// a token an attacker can predict is no token at all. It is not a secret from
+/// someone who can already read this process's memory; it stops a web page you
+/// happened to open from driving the server.
 fn gen_token() -> String {
-    // Not a secret against a local attacker - anyone who can read this
-    // process's memory can already run commands as you. It stops a random web
-    // page from driving the server without you pasting anything.
-    let mut token = String::new();
-    for _ in 0..4 {
-        token.push_str(&format!("{:08x}", fastrand_u32()));
-    }
-    token
-}
-
-fn fastrand_u32() -> u32 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.subsec_nanos())
-        .unwrap_or(0);
-    let pid = std::process::id();
-    // Mix so consecutive calls do not produce adjacent values.
-    let mut x = nanos ^ pid.rotate_left(13) ^ 0x9e37_79b9;
-    x ^= x << 13;
-    x ^= x >> 17;
-    x ^= x << 5;
-    x
+    use rand::Rng;
+    let mut rng = rand::rng();
+    format!("{:016x}{:016x}", rng.random::<u64>(), rng.random::<u64>())
 }
 
 fn temp_dir_name() -> String {
+    use rand::Rng;
     format!(
-        "{}_{:08x}_{}",
+        "{}_{}_{}",
         chrono::Utc::now().format("/tmp/tmp_kanban_%Y%m%d%H%M%S"),
-        fastrand_u32(),
+        rand::rng().random::<u32>(),
         std::process::id()
     )
 }
