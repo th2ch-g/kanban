@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "kanban-core",
     "kanban",
     "kanban-mpi",
 ]
@@ -19,6 +20,7 @@ description = "kanban: A joke tool that displays your message on top(1)/nvtop/nv
 
 [workspace.dependencies]
 kanban = { path = "kanban/" }
+kanban-core = { path = "kanban-core/" }
 kanban-mpi = { path = "kanban-mpi/" }
 anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"]  }

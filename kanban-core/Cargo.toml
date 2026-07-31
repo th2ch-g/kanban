@@ -1,0 +1,11 @@
+[package]
+name = "kanban-core"
+version.workspace = true
+description = "kanban: the per-mode message layout, with no I/O"
+edition.workspace = true
+authors.workspace = true
+
+# Deliberately dependency-free. This crate is what a browser build compiles, and
+# what the local server calls to preview a layout, so it must not reach for
+# clap, wgpu, std::process or std::fs.
+[dependencies]

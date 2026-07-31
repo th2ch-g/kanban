@@ -718,11 +718,16 @@ dependencies = [
  "clap",
  "env_logger",
  "itertools 0.14.0",
+ "kanban-core",
  "log",
  "pollster",
  "rand",
  "wgpu",
 ]
+
+[[package]]
+name = "kanban-core"
+version = "2.3.0"
 
 [[package]]
 name = "kanban-mpi"

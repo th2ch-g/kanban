@@ -5,7 +5,7 @@ use crate::method::*;
 
 impl CommonTopMessage for Multiple2Arg {
     fn messages(&self) -> Vec<String> {
-        self.message.clone()
+        kanban_core::multiple2(&self.message)
     }
 
     fn dir_name(&self) -> &str {

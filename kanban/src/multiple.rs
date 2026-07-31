@@ -5,7 +5,7 @@ use crate::method::*;
 
 impl CommonTopMessage for MultipleArg {
     fn messages(&self) -> Vec<String> {
-        vec![self.message.clone(); self.thread]
+        kanban_core::multiple(&self.message, self.thread)
     }
 
     fn dir_name(&self) -> &str {

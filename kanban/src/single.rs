@@ -6,7 +6,7 @@ use std::time::Instant;
 
 impl CommonTopMessage for SingleArg {
     fn messages(&self) -> Vec<String> {
-        vec![self.message.clone()]
+        kanban_core::single(&self.message)
     }
 
     fn dir_name(&self) -> &str {
@@ -59,7 +59,7 @@ impl ProcnameTopMessage for SingleArg {
             let start = Arc::clone(&start);
             let time_r = Arc::clone(&time_t);
             let message = self.messages()[0].to_string();
-            let builder = Builder::new().name(message);
+            let builder = Builder::new().name(fit_thread_name(&message));
 
             thrs.push(
                 builder

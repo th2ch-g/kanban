@@ -7,7 +7,7 @@ use std::thread::Builder;
 
 impl CommonTopMessage for GpuArg {
     fn messages(&self) -> Vec<String> {
-        vec![self.message.clone()]
+        kanban_core::single(&self.message)
     }
 
     fn dir_name(&self) -> &str {
@@ -70,7 +70,7 @@ impl ProcnameTopMessage for GpuArg {
         let message = self.message.clone();
         let time = self.time;
 
-        let builder = Builder::new().name(message);
+        let builder = Builder::new().name(fit_thread_name(&message));
 
         let handle = builder
             .spawn(move || {

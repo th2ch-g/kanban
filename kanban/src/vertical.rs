@@ -2,27 +2,10 @@ use crate::arg::*;
 use crate::method::compile::*;
 use crate::method::procname::*;
 use crate::method::*;
-use itertools::Itertools;
 
 impl CommonTopMessage for VerticalArg {
     fn messages(&self) -> Vec<String> {
-        let maxlen = self.message.iter().map(|s| s.len()).max().unwrap_or(0);
-        let mut result = vec![String::new(); maxlen];
-
-        for s in self
-            .message
-            .iter()
-            .cloned()
-            .sorted_by_key(|s| std::cmp::Reverse(s.len()))
-        {
-            for (i, c) in s.chars().enumerate() {
-                result[i].push(c);
-            }
-            for res in result.iter_mut().take(maxlen).skip(s.len()) {
-                res.push(' ');
-            }
-        }
-        result
+        kanban_core::vertical(&self.message)
     }
 
     fn dir_name(&self) -> &str {
@@ -33,9 +16,9 @@ impl CommonTopMessage for VerticalArg {
         self.common.method
     }
 
+    /// One process per row of the transposition.
     fn thread(&self) -> usize {
-        let maxlen = self.message.iter().map(|s| s.len()).max().unwrap_or(0);
-        maxlen
+        self.messages().len()
     }
 
     fn time(&self) -> usize {
