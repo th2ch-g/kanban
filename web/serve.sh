@@ -39,13 +39,16 @@ download() {
         return 1
     fi
 
-    # Verify if the checksum is published alongside; skip quietly if not.
-    if curl -fsSL "$url.sha256" -o "$BIN_DIR/kanban.sha256" 2>/dev/null; then
-        expected=$(cut -d' ' -f1 < "$BIN_DIR/kanban.sha256")
-        actual=$(sha256sum "$BIN_DIR/kanban" | cut -d' ' -f1)
-        [ "$expected" = "$actual" ] || die "checksum mismatch for $asset"
-        say "checksum ok"
-    fi
+    # Every release publishes a checksum, so a missing one means something is
+    # wrong - a truncated release, or someone in a position to drop that single
+    # request. Refuse rather than run an unverified binary.
+    curl -fsSL "$url.sha256" -o "$BIN_DIR/kanban.sha256" \
+        || die "no checksum published for $asset; refusing to run it unverified"
+    expected=$(cut -d' ' -f1 < "$BIN_DIR/kanban.sha256")
+    actual=$(sha256sum "$BIN_DIR/kanban" | cut -d' ' -f1)
+    [ -n "$expected" ] || die "empty checksum for $asset"
+    [ "$expected" = "$actual" ] || die "checksum mismatch for $asset"
+    say "checksum ok"
 
     chmod +x "$BIN_DIR/kanban"
     echo "$BIN_DIR/kanban"

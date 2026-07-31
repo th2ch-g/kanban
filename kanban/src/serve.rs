@@ -20,9 +20,13 @@ const INDEX_HTML: &str = include_str!("../../web/index.html");
 const APP_JS: &str = include_str!("../../web/app.js");
 const STYLE_CSS: &str = include_str!("../../web/style.css");
 
-/// Longest message we will accept. Comfortably past anything readable in `top`,
-/// and short enough that nobody can queue megabytes of work through one field.
-const MAX_MESSAGE_LEN: usize = 512;
+/// Longest message we will accept, in bytes.
+///
+/// Not an arbitrary cap: `--method compile` names the binary after the message,
+/// and Linux limits one path component to NAME_MAX bytes. Past that, rustc
+/// fails with ENAMETOOLONG - which used to leave the run flag stuck on, so
+/// every later run answered 409 forever.
+const MAX_MESSAGE_LEN: usize = 255;
 
 /// Longest run we will accept, in seconds.
 const MAX_TIME: usize = 300;
@@ -120,7 +124,15 @@ fn handle(
             // the accept loop for the whole duration, so /health and /preview
             // stop answering and the page looks frozen.
             std::thread::spawn(move || {
-                spec.execute(has_rustc);
+                // A panic in here unwinds only this thread, so the server lives
+                // on - but it would skip the reset below and wedge every later
+                // run at 409. Catch it and report instead.
+                let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    spec.execute(has_rustc)
+                }));
+                if outcome.is_err() {
+                    log::error!("run failed; the server is still up");
+                }
                 busy.store(false, Ordering::SeqCst);
             });
             result
