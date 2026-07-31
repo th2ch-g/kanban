@@ -26,6 +26,7 @@
 # kanban
 
 - [kanban](#kanban)
+  - [Web UI](#web-ui)
   - [Install](#install)
     - [Dependencies](#dependencies)
   - [Install OpenMPI version](#install-openmpi-version)
@@ -41,15 +42,49 @@
     - [Gpu mode](#gpu-mode)
     - [RawSingle mode](#rawsingle-mode)
     - [RawGpu mode](#rawgpu-mode)
+    - [Serve mode](#serve-mode)
+
+## Web UI
+
+Pick a mode, type a message, press run, and watch it appear in your own `top`.
+
+~~~shell
+curl -fsSL https://th2ch-g.github.io/kanban/serve.sh | sh
+# then open http://127.0.0.1:8787/
+~~~
+
+The script uses the `kanban` on your `PATH` if there is one, otherwise fetches
+the released static binary for your machine, otherwise builds with `cargo`.
+Nothing is installed system-wide.
+
+Already have kanban? `kanban serve` is the same thing.
+
+A browser cannot name a process, so the page cannot do this on its own - it asks
+the local server to. The server binds `127.0.0.1` only, takes structured fields
+rather than a command line, and never invokes a shell.
+
+<https://th2ch-g.github.io/kanban/> hosts the same page. Without a local kanban
+running it shows you how to start one.
 
 ## Install
 ~~~shell
 cargo install --git https://github.com/th2ch-g/kanban.git kanban --locked
 ~~~
 
+Or grab a static binary from [releases](https://github.com/th2ch-g/kanban/releases):
+
+~~~shell
+curl -fsSL -o kanban \
+  https://github.com/th2ch-g/kanban/releases/latest/download/kanban-x86_64-unknown-linux-musl
+chmod +x kanban
+~~~
+
 ### Dependencies
 - [Rust](https://www.rust-lang.org/tools/install)
-    - kanban requires Rust environment
+    - Needed to build kanban, and by the default `--method compile` at run time,
+      which invokes `rustc` to produce a binary named after your message.
+    - `--method procname` needs neither: it names threads instead, which
+      `top -H` and `htop` show.
 
 ## Install OpenMPI version
 ~~~shell
@@ -122,6 +157,9 @@ kanban vertical -m "ThankYou" "GoodLuck" -t 20 & top
 ~~~
 
 ### Wave mode
+- The message scrolls through a `-l`-wide window, one frame at a time.
+- There is no `-t`: each frame lasts two seconds, so the run takes
+  `frames x 2` seconds.
 ~~~shell
 kanban wave -m 123456789 -@ 4 & top
 ~~~
@@ -161,5 +199,12 @@ kanban raw-single -m "aaa" -t 20 & top
 - GPU is used by wgpu
 ~~~shell
 kanban raw-gpu -m "aaa" -t 20 & nvtop
+~~~
+
+### Serve mode
+- Serves the web UI on `127.0.0.1` and runs the other modes on request.
+~~~shell
+kanban serve            # then open http://127.0.0.1:8787/
+kanban serve --port 9000
 ~~~
 

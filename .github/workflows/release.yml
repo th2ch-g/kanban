@@ -1,0 +1,55 @@
+name: release
+
+# Releases so far carry no binaries at all, so the only way to get kanban has
+# been to build it. A statically linked musl binary is what lets serve.sh hand
+# someone a working kanban without a Rust toolchain.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+          - target: aarch64-unknown-linux-musl
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: install cross linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-musl" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+            echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+          fi
+
+      - name: build
+        run: cargo build -r --bin kanban --target ${{ matrix.target }}
+
+      - name: package
+        run: |
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/kanban" "dist/kanban-${{ matrix.target }}"
+          ( cd dist && sha256sum "kanban-${{ matrix.target }}" > "kanban-${{ matrix.target }}.sha256" )
+
+      - name: upload
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/kanban-${{ matrix.target }}
+            dist/kanban-${{ matrix.target }}.sha256
+          fail_on_unmatched_files: true
