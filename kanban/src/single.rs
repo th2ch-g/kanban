@@ -6,15 +6,15 @@ use std::time::Instant;
 
 impl CommonTopMessage for SingleArg {
     fn messages(&self) -> Vec<String> {
-        vec![self.message.clone()]
+        kanban_core::single(&self.message)
     }
 
     fn dir_name(&self) -> &str {
-        &self.dir_name
+        &self.common.dir_name
     }
 
     fn method(&self) -> Method {
-        self.method
+        self.common.method
     }
 
     fn thread(&self) -> usize {
@@ -28,23 +28,13 @@ impl CommonTopMessage for SingleArg {
 
 impl CompileTopMessage for SingleArg {
     fn run_by_compile(self) {
-        self.mkdir(self.dir_name());
+        let _guard = self.temp_dir();
 
-        self.create_mainfile(self.dir_name(), self.thread(), self.time());
+        self.create_mainfile(self.dir_name());
 
-        self.create_idfile();
-
-        self.compile(self.dir_name(), &self.messages()[0]);
-
-        let current_dir = self.record_current_dir();
-
-        self.cd(&self.dir_name);
-
-        self.execute(".", &self.messages()[0]);
-
-        self.cd(&current_dir);
-
-        self.rmdir();
+        let message = &self.messages()[0];
+        self.compile(self.dir_name(), message);
+        self.execute(self.dir_name(), message, self.thread(), self.time());
     }
 }
 
@@ -58,7 +48,7 @@ impl ProcnameTopMessage for SingleArg {
             let start = Arc::clone(&start);
             let time_r = Arc::clone(&time_t);
             let message = self.messages()[0].to_string();
-            let builder = Builder::new().name(message);
+            let builder = Builder::new().name(fit_thread_name(&message));
 
             thrs.push(
                 builder

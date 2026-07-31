@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-    pull_request:
-      branches:
-        - main
-      types:
-       - closed
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -21,10 +19,32 @@ jobs:
         run: cargo --version
       - name: build
         run: cargo build -r --bin kanban
+      - name: test
+        run: cargo test -p kanban
+
+  # default-members is ["kanban"], so the build job above never looks at
+  # kanban-mpi. It had gone stale unnoticed: the crate used log and env_logger
+  # without declaring them, and would not compile at all.
+  build-mpi:
+    name: build-mpi
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install openmpi and clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev libclang-dev clang
+      - name: check
+        run: cargo check --workspace
 
   format:
     name: format
     runs-on: ubuntu-latest
+    # Pushes a "[Action] cargo fmt" commit, so keep it off pull requests:
+    # on a fork PR it cannot push, and on a branch PR it would rewrite
+    # someone else's branch behind their back.
+    if: github.event_name == 'push'
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -38,8 +58,10 @@ jobs:
         run: cargo fmt --version
       - name: format
         run: cargo fmt
+      # Pinned for the same reason as in release.yml: third-party code that
+      # pushes commits to main.
       - name: commit
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
           commit_message: '[Action] cargo fmt'
 

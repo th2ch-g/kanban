@@ -5,28 +5,20 @@ use crate::method::*;
 
 impl CommonTopMessage for LongArg {
     fn messages(&self) -> Vec<String> {
-        if self.message.len() <= self.length {
-            return vec![self.message.to_string()];
-        }
-
-        self.message
-            .as_bytes()
-            .chunks(self.length)
-            .map(|chunk| String::from_utf8_lossy(chunk).to_string())
-            .collect::<Vec<String>>()
+        kanban_core::long(&self.message, self.length)
     }
 
     fn dir_name(&self) -> &str {
-        &self.dir_name
+        &self.common.dir_name
     }
 
     fn method(&self) -> Method {
-        self.method
+        self.common.method
     }
 
+    /// One process per row, not the user's thread count: every chunk has to be
+    /// on screen for the message to read as a whole.
     fn thread(&self) -> usize {
-        // For LongArg, we want to display all chunks.
-        // Similar to Multiple2Arg, thread count should be number of chunks.
         self.messages().len()
     }
 
@@ -37,7 +29,8 @@ impl CommonTopMessage for LongArg {
 
 impl CompileTopMessage for LongArg {
     fn run_by_compile(self) {
-        self.clone().template_run(self.time, false)
+        self.clone()
+            .template_run(self.time, ThreadPlan::Decreasing, ExecutionOrder::Parallel)
     }
 }
 

@@ -5,15 +5,15 @@ use crate::method::*;
 
 impl CommonTopMessage for MultipleArg {
     fn messages(&self) -> Vec<String> {
-        vec![self.message.clone(); self.thread]
+        kanban_core::multiple(&self.message, self.thread)
     }
 
     fn dir_name(&self) -> &str {
-        &self.dir_name
+        &self.common.dir_name
     }
 
     fn method(&self) -> Method {
-        self.method
+        self.common.method
     }
 
     fn thread(&self) -> usize {
@@ -27,7 +27,8 @@ impl CommonTopMessage for MultipleArg {
 
 impl CompileTopMessage for MultipleArg {
     fn run_by_compile(self) {
-        self.clone().template_run(self.time, true);
+        self.clone()
+            .template_run(self.time, ThreadPlan::One, ExecutionOrder::Parallel);
     }
 }
 

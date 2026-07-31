@@ -47,9 +47,20 @@
 cargo install --git https://github.com/th2ch-g/kanban.git kanban --locked
 ~~~
 
+Or grab a static binary from [releases](https://github.com/th2ch-g/kanban/releases):
+
+~~~shell
+curl -fsSL -o kanban \
+  https://github.com/th2ch-g/kanban/releases/latest/download/kanban-x86_64-unknown-linux-musl
+chmod +x kanban
+~~~
+
 ### Dependencies
 - [Rust](https://www.rust-lang.org/tools/install)
-    - kanban requires Rust environment
+    - Needed to build kanban, and by the default `--method compile` at run time,
+      which invokes `rustc` to produce a binary named after your message.
+    - `--method procname` needs neither: it names threads instead, which
+      `top -H` and `htop` show.
 
 ## Install OpenMPI version
 ~~~shell
@@ -122,6 +133,9 @@ kanban vertical -m "ThankYou" "GoodLuck" -t 20 & top
 ~~~
 
 ### Wave mode
+- The message scrolls through a `-l`-wide window, one frame at a time.
+- There is no `-t`: each frame lasts two seconds, so the run takes
+  `frames x 2` seconds.
 ~~~shell
 kanban wave -m 123456789 -@ 4 & top
 ~~~
@@ -162,4 +176,5 @@ kanban raw-single -m "aaa" -t 20 & top
 ~~~shell
 kanban raw-gpu -m "aaa" -t 20 & nvtop
 ~~~
+
 

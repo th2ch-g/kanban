@@ -8,6 +8,8 @@ authors.workspace = true
 [dependencies]
 kanban.workspace = true
 mpi.workspace = true
+env_logger.workspace = true
+log.workspace = true
 
 [[bin]]
 name = "kanban_mpi"

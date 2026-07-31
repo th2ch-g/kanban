@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0" }
-pollster = "0.3.0"
+wgpu = "30"
+pollster = "1.0"
 
 [[bin]]
-name = "{ name }"
+# kanban rewrites this name to the message, which is what nvtop shows. The
+# placeholder is a valid crate name so the template builds untouched.
+name = "kanban_gpu_template"
 path = "main.rs"

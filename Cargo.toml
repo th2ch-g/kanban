@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "kanban-core",
     "kanban",
     "kanban-mpi",
 ]
@@ -19,17 +20,17 @@ description = "kanban: A joke tool that displays your message on top(1)/nvtop/nv
 
 [workspace.dependencies]
 kanban = { path = "kanban/" }
+kanban-core = { path = "kanban-core/" }
 kanban-mpi = { path = "kanban-mpi/" }
 anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"]  }
 chrono = "0.4.22"
 rand = "0.9.3"
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", tag = "v0.18.0" }
-pollster = "0.3.0"
+wgpu = "30"
+pollster = "1.0"
 env_logger = "0.10.1"
 log = "0.4.21"
 mpi = "0.6.0"
-itertools = "0.14.0"
 
 [profile.release]
 opt-level = "s"

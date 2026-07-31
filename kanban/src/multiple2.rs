@@ -5,15 +5,15 @@ use crate::method::*;
 
 impl CommonTopMessage for Multiple2Arg {
     fn messages(&self) -> Vec<String> {
-        self.message.clone()
+        kanban_core::multiple2(&self.message)
     }
 
     fn dir_name(&self) -> &str {
-        &self.dir_name
+        &self.common.dir_name
     }
 
     fn method(&self) -> Method {
-        self.method
+        self.common.method
     }
 
     fn thread(&self) -> usize {
@@ -27,7 +27,8 @@ impl CommonTopMessage for Multiple2Arg {
 
 impl CompileTopMessage for Multiple2Arg {
     fn run_by_compile(self) {
-        self.clone().template_run(self.time, true);
+        self.clone()
+            .template_run(self.time, ThreadPlan::One, ExecutionOrder::Parallel);
     }
 }
 
