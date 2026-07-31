@@ -1,0 +1,326 @@
+/* kanban - a page shaped like the thing it produces.
+ *
+ * top(1) has three tells: a reverse-video header bar, right-aligned numeric
+ * columns, and a summary block above the task list. This page borrows all
+ * three, so the controls read as part of the output rather than a form beside
+ * it. No cards, no radius, no shadow - a terminal has none of those.
+ *
+ * Amber rather than the usual terminal green: P3 phosphor is what the machines
+ * these tools grew up on actually looked like, and it keeps the warm bias of
+ * the background from fighting the accent.
+ */
+
+:root {
+  --bg:      #0b0a08;   /* warm-shifted black, so amber reads as phosphor */
+  --panel:   #14120e;
+  --fg:      #e8dcc8;   /* bone: the "white" of an amber tube */
+  --amber:   #ffb000;
+  --dim:     #6b6353;
+  --alert:   #ff5c3a;
+  --rule:    #2a2620;
+
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "DejaVu Sans Mono",
+          "Liberation Mono", Menlo, Consolas, monospace;
+
+  --ch: clamp(12px, 1.05vw + 8px, 15px);
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: var(--ch)/1.55 var(--mono);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+.screen {
+  max-width: 92ch;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.5rem) clamp(0.75rem, 3vw, 1.5rem) 4rem;
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ---- summary block ---------------------------------------------------- */
+
+.summary { margin-bottom: 1.75rem; }
+
+.line { margin: 0 0 0.15rem; }
+
+.cmd {
+  color: var(--amber);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.dim { color: var(--dim); }
+.fg  { color: var(--fg); }
+
+.tag {
+  color: var(--amber);
+  letter-spacing: 0.14em;
+  font-size: 0.82em;
+  text-transform: uppercase;
+}
+
+#link-status .tag { color: var(--dim); }
+#link-status[data-state="up"]   .tag { color: var(--amber); }
+#link-status[data-state="down"] .tag { color: var(--alert); }
+
+/* ---- controls, dressed as more summary lines -------------------------- */
+
+.controls {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 1rem 0 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.row { margin: 0 0 0.9rem; border: 0; padding: 0; }
+.row:last-child { margin-bottom: 0; }
+.row legend { padding: 0; }
+
+.hint {
+  margin: 0.3rem 0 0;
+  color: var(--dim);
+  font-size: 0.88em;
+}
+
+.hint code { color: var(--fg); }
+
+/* Bracketed choices are how a terminal offers options. Reverse video marks the
+ * selection, which is also the focus idiom, so one visual rule covers both. */
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.modes label { cursor: pointer; }
+
+.modes input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modes span {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  color: var(--dim);
+  border: 1px solid transparent;
+}
+
+.modes span::before { content: "["; }
+.modes span::after  { content: "]"; }
+
+.modes label:hover span { color: var(--fg); }
+
+.modes input:checked + span {
+  background: var(--amber);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.modes input:focus-visible + span {
+  border-color: var(--fg);
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.field {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5ch;
+  margin-top: 0.35rem;
+}
+
+.caret { color: var(--amber); }
+
+input[type="text"],
+input[type="number"] {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--fg);
+  font: inherit;
+  padding: 0.15rem 0.2rem;
+}
+
+input[type="text"] { flex: 1; min-width: 0; }
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: 0;
+  border-bottom-color: var(--amber);
+  background: var(--panel);
+}
+
+input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 2ch;
+  align-items: baseline;
+}
+
+.num { display: inline-flex; align-items: baseline; gap: 0.6ch; }
+.num input { width: 6ch; }
+.num[hidden] { display: none; }
+.unit { color: var(--dim); }
+
+/* ---- the task list ---------------------------------------------------- */
+
+.tasks { margin-bottom: 1.75rem; }
+
+.tablewrap { overflow-x: auto; }
+
+.proc {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: pre;
+}
+
+/* The reverse-video header bar: top's single most recognisable feature. */
+.proc thead th {
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  padding: 0.1rem 0.6ch;
+}
+
+.proc th.r, .proc td.r { text-align: right; }
+.proc th.w { width: 99%; }
+
+.proc td {
+  padding: 0.05rem 0.6ch;
+  color: var(--dim);
+}
+
+.proc td.w {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.proc tr.hot td.r:first-child { color: var(--fg); }
+
+.proc tbody tr {
+  animation: settle 240ms ease-out both;
+}
+
+@keyframes settle {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.proc .empty td {
+  color: var(--dim);
+  padding: 0.6rem 0.6ch;
+  font-style: normal;
+}
+
+.caption {
+  margin: 0.5rem 0 0;
+  color: var(--dim);
+  font-size: 0.85em;
+}
+
+/* ---- prompt ----------------------------------------------------------- */
+
+.prompt { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
+
+.promptline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 1ch;
+}
+
+.ps1 { color: var(--amber); }
+
+.run {
+  background: var(--amber);
+  color: var(--bg);
+  border: 1px solid var(--amber);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 1.2ch;
+  cursor: pointer;
+}
+
+.run:hover:not(:disabled) { background: var(--fg); border-color: var(--fg); }
+.run:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.run:disabled {
+  background: transparent;
+  color: var(--dim);
+  border-color: var(--rule);
+  cursor: not-allowed;
+}
+
+.runstate { color: var(--dim); }
+.runstate[data-state="error"] { color: var(--alert); }
+.runstate[data-state="running"] { color: var(--amber); }
+
+.ghost {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--dim);
+  font: inherit;
+  padding: 0.05rem 0.8ch;
+  cursor: pointer;
+}
+
+.ghost:hover { color: var(--fg); border-color: var(--dim); }
+.ghost:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.offline { margin-top: 1rem; }
+.offline[hidden] { display: none; }
+
+.offline summary {
+  cursor: pointer;
+  color: var(--dim);
+}
+
+.offline summary:hover { color: var(--fg); }
+.offline summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.copyable {
+  background: var(--panel);
+  border-left: 2px solid var(--amber);
+  margin: 0.5rem 0;
+  padding: 0.5rem 1ch;
+  overflow-x: auto;
+  color: var(--fg);
+}
+
+.foot {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  color: var(--dim);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1ch;
+  font-size: 0.9em;
+}
+
+.foot code { color: var(--fg); overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .proc tbody tr { animation: none; }
+}

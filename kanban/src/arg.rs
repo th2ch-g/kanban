@@ -110,6 +110,10 @@ pub enum Mode {
     /// simple gpu execution without command rename
     #[clap(display_order = 9)]
     RawGpu(RawGpuArg),
+
+    /// serve a local web UI that runs kanban on this machine
+    #[clap(display_order = 10)]
+    Serve(ServeArg),
 }
 
 impl Mode {
@@ -127,7 +131,7 @@ impl Mode {
             Mode::Vertical(arg) => Some(&mut arg.common),
             Mode::Wave(arg) => Some(&mut arg.common),
             Mode::Gpu(arg) => Some(&mut arg.common),
-            Mode::RawSingle(_) | Mode::RawGpu(_) => None,
+            Mode::RawSingle(_) | Mode::RawGpu(_) | Mode::Serve(_) => None,
         }
     }
 }
@@ -409,6 +413,22 @@ pub struct RawSingleArg {
         display_order = 3
     )]
     pub time: usize,
+}
+
+#[derive(Debug, clap::Args, Clone)]
+#[clap(version)]
+pub struct ServeArg {
+    #[clap(
+        short,
+        long,
+        value_name = "INT",
+        default_value = "8787",
+        help = "port to listen on",
+        display_order = 1
+    )]
+    pub port: u16,
+    // Deliberately no --host. The server runs whatever it is asked to run, so
+    // it is only ever bound to the loopback interface.
 }
 
 #[derive(Debug, clap::Args, Clone)]
