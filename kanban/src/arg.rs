@@ -325,7 +325,7 @@ pub struct WaveArg {
         long,
         value_name = "INT",
         default_value = "1",
-        help = "thread numer",
+        help = "thread number",
         display_order = 2
     )]
     pub thread: usize,
