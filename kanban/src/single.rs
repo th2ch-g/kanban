@@ -10,11 +10,11 @@ impl CommonTopMessage for SingleArg {
     }
 
     fn dir_name(&self) -> &str {
-        &self.dir_name
+        &self.common.dir_name
     }
 
     fn method(&self) -> Method {
-        self.method
+        self.common.method
     }
 
     fn thread(&self) -> usize {
@@ -39,7 +39,7 @@ impl CompileTopMessage for SingleArg {
 
         let current_dir = self.record_current_dir();
 
-        self.cd(&self.dir_name);
+        self.cd(&self.common.dir_name);
 
         self.execute(".", message, self.thread(), self.time());
 

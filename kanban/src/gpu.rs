@@ -11,11 +11,11 @@ impl CommonTopMessage for GpuArg {
     }
 
     fn dir_name(&self) -> &str {
-        &self.dir_name
+        &self.common.dir_name
     }
 
     fn method(&self) -> Method {
-        self.method
+        self.common.method
     }
 
     fn thread(&self) -> usize {

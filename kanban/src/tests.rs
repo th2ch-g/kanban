@@ -17,9 +17,11 @@ fn single(message: &str, thread: usize) -> SingleArg {
         message: message.to_string(),
         thread,
         time: 1,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 
@@ -28,9 +30,11 @@ fn multiple(message: &str, thread: usize) -> MultipleArg {
         message: message.to_string(),
         thread,
         time: 1,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 
@@ -38,9 +42,11 @@ fn multiple2(message: &[&str]) -> Multiple2Arg {
     Multiple2Arg {
         message: message.iter().map(|s| s.to_string()).collect(),
         time: 1,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 
@@ -49,9 +55,11 @@ fn long(message: &str, length: usize) -> LongArg {
         message: message.to_string(),
         length,
         time: 1,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 
@@ -59,9 +67,11 @@ fn vertical(message: &[&str]) -> VerticalArg {
     VerticalArg {
         message: message.iter().map(|s| s.to_string()).collect(),
         time: 1,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 
@@ -70,9 +80,11 @@ fn wave(message: &str, length: usize, thread: usize) -> WaveArg {
         message: message.to_string(),
         length,
         thread,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 
@@ -81,9 +93,11 @@ fn gpu(message: &str) -> GpuArg {
         message: message.to_string(),
         thread: 1,
         time: 1,
-        tmpdir: TMPDIR.to_string(),
-        method: Method::Procname,
-        dir_name: TMPDIR.to_string(),
+        common: CommonArgs {
+            tmpdir: TMPDIR.to_string(),
+            method: Method::Procname,
+            dir_name: TMPDIR.to_string(),
+        },
     }
 }
 

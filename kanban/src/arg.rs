@@ -2,6 +2,14 @@ use crate::method::*;
 use clap::{Parser, Subcommand};
 use rand::prelude::*;
 
+/// Placeholder meaning "the user did not pass --tmpdir".
+///
+/// clap cannot tell a default apart from an identical explicit value, so
+/// `gen_dir_name` compares against this exact string. It used to be written out
+/// in eight places, and editing any one of them would have silently stopped
+/// randomising the directory for that mode alone.
+const DEFAULT_TMPDIR: &str = "/tmp/tmp_kanban_(date_randomnumber_pid)";
+
 #[derive(Parser, Debug, Clone)]
 #[clap(version, about)] //#[clap(author, version, about)]
 pub struct MainArg {
@@ -13,15 +21,8 @@ impl Default for MainArg {
     fn default() -> Self {
         let mut main_arg = Self::parse();
 
-        match &mut main_arg.mode {
-            Mode::Single(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            Mode::Multiple(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            Mode::Multiple2(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            Mode::Long(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            Mode::Vertical(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            Mode::Wave(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            Mode::Gpu(arg) => arg.dir_name = gen_dir_name(&arg.tmpdir),
-            _ => (),
+        if let Some(common) = main_arg.mode.common_mut() {
+            common.dir_name = gen_dir_name(&common.tmpdir);
         }
 
         main_arg
@@ -29,8 +30,7 @@ impl Default for MainArg {
 }
 
 fn gen_dir_name(input_name: &str) -> String {
-    let default_tmpdir_name = String::from("/tmp/tmp_kanban_(date_randomnumber_pid)");
-    if input_name == default_tmpdir_name {
+    if input_name == DEFAULT_TMPDIR {
         let mut rng = rand::rng();
         let rand_num: u32 = rng.random();
         format!(
@@ -42,6 +42,35 @@ fn gen_dir_name(input_name: &str) -> String {
     } else {
         input_name.to_string()
     }
+}
+
+/// Options shared by every mode that writes to a temporary directory.
+///
+/// They render after each mode's own options because their display order sits
+/// above anything the modes use, which is where they have always appeared.
+#[derive(Debug, clap::Args, Clone)]
+pub struct CommonArgs {
+    #[clap(
+        long = "tmpdir",
+        value_name = "STR",
+        default_value = DEFAULT_TMPDIR,
+        help = "tmp directory name",
+        display_order = 100
+    )]
+    pub tmpdir: String,
+
+    #[clap(
+        long,
+        value_enum,
+        default_value = "compile",
+        help = "execution method",
+        display_order = 101
+    )]
+    pub method: Method,
+
+    /// Filled in by `MainArg::default`, never parsed from the command line.
+    #[clap(skip)]
+    pub dir_name: String,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -83,6 +112,26 @@ pub enum Mode {
     RawGpu(RawGpuArg),
 }
 
+impl Mode {
+    /// The temp-directory settings, for the modes that have any.
+    ///
+    /// Listing the raw modes explicitly rather than falling through a wildcard
+    /// is deliberate: a new mode that forgets to wire up `dir_name` is now a
+    /// compile error instead of an empty path at runtime.
+    fn common_mut(&mut self) -> Option<&mut CommonArgs> {
+        match self {
+            Mode::Single(arg) => Some(&mut arg.common),
+            Mode::Multiple(arg) => Some(&mut arg.common),
+            Mode::Multiple2(arg) => Some(&mut arg.common),
+            Mode::Long(arg) => Some(&mut arg.common),
+            Mode::Vertical(arg) => Some(&mut arg.common),
+            Mode::Wave(arg) => Some(&mut arg.common),
+            Mode::Gpu(arg) => Some(&mut arg.common),
+            Mode::RawSingle(_) | Mode::RawGpu(_) => None,
+        }
+    }
+}
+
 #[derive(Debug, clap::Args, Clone)]
 #[clap(arg_required_else_help = true, version)]
 pub struct SingleArg {
@@ -116,26 +165,8 @@ pub struct SingleArg {
     )]
     pub time: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 4
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
@@ -171,26 +202,8 @@ pub struct MultipleArg {
     )]
     pub time: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 4
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
@@ -219,26 +232,8 @@ pub struct Multiple2Arg {
     )]
     pub time: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 3
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
@@ -274,26 +269,8 @@ pub struct LongArg {
     )]
     pub length: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 4
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
@@ -322,26 +299,8 @@ pub struct VerticalArg {
     )]
     pub time: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 3
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
@@ -377,26 +336,8 @@ pub struct WaveArg {
     )]
     pub length: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 4
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
@@ -432,26 +373,8 @@ pub struct GpuArg {
     )]
     pub time: usize,
 
-    #[clap(
-        long = "tmpdir",
-        value_name = "STR",
-        default_value = "/tmp/tmp_kanban_(date_randomnumber_pid)",
-        help = "tmp directory name",
-        display_order = 4
-    )]
-    pub tmpdir: String,
-
-    #[clap(
-        long,
-        value_enum,
-        default_value = "compile",
-        help = "execution method",
-        display_order = 5
-    )]
-    pub method: Method,
-
-    #[clap(skip)]
-    pub dir_name: String,
+    #[clap(flatten)]
+    pub common: CommonArgs,
 }
 
 #[derive(Debug, clap::Args, Clone)]
