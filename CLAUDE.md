@@ -24,9 +24,6 @@ cargo fmt
 # Lint (CI runs it from ./kanban)
 cargo clippy
 
-# Browser build of the layout logic. No wasm-pack: kanban-wasm is a cdylib with
-# a raw extern "C" surface.
-cargo build -r -p kanban-wasm --target wasm32-unknown-unknown
 
 # MPI variant
 cargo build -r -p kanban-mpi
@@ -60,9 +57,7 @@ The tool's whole trick: **the name shown by `top(1)` is what we control.** Every
 producing a list of strings, and each string becomes one process (or thread) name.
 
 **Per-mode logic lives in `kanban-core`**, a dependency-free crate with one function per mode
-(`single` / `multiple` / `multiple2` / `long` / `vertical` / `wave`). Three callers share it: the
-CLI, `kanban serve`'s preview endpoint, and the wasm build the published page loads. Everything
-downstream is shared machinery that does not care which mode produced the list.
+(`single` / `multiple` / `multiple2` / `long` / `vertical` / `wave`). Everything downstream is shared machinery that does not care which mode produced the list.
 
 - `long` — the message wrapped into rows of `-l` characters
 - `vertical` — transposed columns, so words read top-to-bottom in `top`
@@ -77,8 +72,7 @@ different ways, and `wave` panicked outright.
 | crate | what it is |
 |---|---|
 | `kanban-core` | the layout functions, no dependencies, no I/O |
-| `kanban` | the CLI, the execution methods, and `serve` |
-| `kanban-wasm` | `cdylib` exposing `kanban-core` to the browser over a raw `extern "C"` ABI |
+| `kanban` | the CLI and the execution methods |
 | `kanban-mpi` | MPI wrapper around `kanban_run` |
 
 `default-members = ["kanban"]`, so a plain `cargo build` skips the rest. That is how `kanban-mpi`
@@ -130,17 +124,6 @@ support for a mode.
 
 `raw-single` / `raw-gpu` bypass all of the above: no rename, no temp dir, run in-process.
 
-### `kanban serve`
-
-Binds `127.0.0.1` only and serves `web/` — embedded with `include_str!`, so the page and the API
-share an origin and none of CORS, mixed content or Chrome's Local Network Access applies. The
-published copy on Pages can still drive a local server cross-origin, with the token printed at
-startup.
-
-`POST /run` takes structured fields, never a command string, and dispatches to in-process code with
-no shell anywhere. The message becomes a filename, so `/`, `..` and control characters are rejected
-at that boundary.
-
 ## Gotchas
 
 - **`--method procname` names threads, not processes**, so plain `top` will not show them.
@@ -149,7 +132,7 @@ at that boundary.
 - **`rmdir` only deletes a directory containing `kanban.idfile`.** That marker guards against a
   user-supplied `--tmpdir` pointing at real work. Cleanup is a `Drop` guard, so it survives panics.
 - **`MainArg::default()` calls `clap::Parser::parse()`** — a `Default` impl that reads argv and may
-  exit the process. Never construct it in a non-CLI context; `serve` builds `MainArg` directly.
+  exit the process. Never construct it in a non-CLI context.
 - **`wave` has no `-t`.** Each frame lasts `SECONDS_PER_FRAME` (2s), so a run takes frames × 2.
 - **`gen_dir_name` compares `--tmpdir` against `DEFAULT_TMPDIR`** to decide whether the user passed
   one. Change the constant and the default together; they are the same `const` now, but the

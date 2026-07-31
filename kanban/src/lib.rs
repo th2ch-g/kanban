@@ -6,7 +6,6 @@ pub mod multiple;
 pub mod multiple2;
 pub mod raw_gpu;
 pub mod raw_single;
-pub mod serve;
 pub mod single;
 #[cfg(test)]
 mod tests;
@@ -63,6 +62,5 @@ pub fn kanban_run(cli: &MainArg) {
         Mode::Gpu(arg) => dispatch(arg),
         Mode::RawSingle(arg) => arg.run(),
         Mode::RawGpu(arg) => arg.run(),
-        Mode::Serve(arg) => serve::run(arg),
     }
 }

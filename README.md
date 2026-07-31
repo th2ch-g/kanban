@@ -26,7 +26,6 @@
 # kanban
 
 - [kanban](#kanban)
-  - [Web UI](#web-ui)
   - [Install](#install)
     - [Dependencies](#dependencies)
   - [Install OpenMPI version](#install-openmpi-version)
@@ -42,29 +41,6 @@
     - [Gpu mode](#gpu-mode)
     - [RawSingle mode](#rawsingle-mode)
     - [RawGpu mode](#rawgpu-mode)
-    - [Serve mode](#serve-mode)
-
-## Web UI
-
-Pick a mode, type a message, press run, and watch it appear in your own `top`.
-
-~~~shell
-curl -fsSL https://th2ch-g.github.io/kanban/serve.sh | sh
-# then open http://127.0.0.1:8787/
-~~~
-
-The script uses the `kanban` on your `PATH` if there is one, otherwise fetches
-the released static binary for your machine, otherwise builds with `cargo`.
-Nothing is installed system-wide.
-
-Already have kanban? `kanban serve` is the same thing.
-
-A browser cannot name a process, so the page cannot do this on its own - it asks
-the local server to. The server binds `127.0.0.1` only, takes structured fields
-rather than a command line, and never invokes a shell.
-
-<https://th2ch-g.github.io/kanban/> hosts the same page. Without a local kanban
-running it shows you how to start one.
 
 ## Install
 ~~~shell
@@ -201,10 +177,4 @@ kanban raw-single -m "aaa" -t 20 & top
 kanban raw-gpu -m "aaa" -t 20 & nvtop
 ~~~
 
-### Serve mode
-- Serves the web UI on `127.0.0.1` and runs the other modes on request.
-~~~shell
-kanban serve            # then open http://127.0.0.1:8787/
-kanban serve --port 9000
-~~~
 

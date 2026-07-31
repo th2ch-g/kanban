@@ -4,7 +4,6 @@ members = [
     "kanban-core",
     "kanban",
     "kanban-mpi",
-    "kanban-wasm",
 ]
 
 default-members = [
@@ -32,7 +31,6 @@ pollster = "1.0"
 env_logger = "0.10.1"
 log = "0.4.21"
 mpi = "0.6.0"
-tiny_http = "0.12"
 
 [profile.release]
 opt-level = "s"
