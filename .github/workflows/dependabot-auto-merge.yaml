@@ -1,0 +1,37 @@
+name: Dependabot auto-merge
+
+# Auto-merge every Dependabot PR, including major bumps, once the required lint
+# check passes. The "pre-commit" required check is the merge gate; this workflow
+# only queues the merge and never bypasses CI, so a PR that breaks lint is never
+# merged. CI cannot catch every breaking change (runtime behaviour shifts can
+# slip through), so this trades manual major-bump review for convenience.
+#
+# Prerequisites (configured outside this file):
+#   - "Allow auto-merge" enabled in repo Settings -> General.
+#   - Branch protection on main requiring the "pre-commit" check from
+#     lint.yml. That required check is the merge gate; this workflow only
+#     queues the merge and never bypasses CI.
+
+on: pull_request
+
+#  Avoid two runs racing on the same PR when Dependabot pushes a rebased commit.
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # Use the PR author from the event payload, not github.actor: actor is
+    # spoofable on re-runs, the PR author is fixed in the payload.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "$PR_URL"
