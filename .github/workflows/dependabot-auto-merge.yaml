@@ -1,16 +1,10 @@
 name: Dependabot auto-merge
 
-# Auto-merge every Dependabot PR, including major bumps, once the required lint
-# check passes. The "pre-commit" required check is the merge gate; this workflow
-# only queues the merge and never bypasses CI, so a PR that breaks lint is never
-# merged. CI cannot catch every breaking change (runtime behaviour shifts can
-# slip through), so this trades manual major-bump review for convenience.
-#
-# Prerequisites (configured outside this file):
-#   - "Allow auto-merge" enabled in repo Settings -> General.
-#   - Branch protection on main requiring the "pre-commit" check from
-#     lint.yml. That required check is the merge gate; this workflow only
-#     queues the merge and never bypasses CI.
+# Auto-merge every Dependabot PR, including major bumps, after required CI passes.
+# Requires "Allow auto-merge" and main branch protection with these checks:
+#   - build, build-mpi, and lint from cargo.yaml
+#   - test from test.yml
+# format only runs on pushes, so it must not be required for pull requests.
 
 on: pull_request
 
